@@ -1,0 +1,17 @@
+int a = 2 + 4 * ( (6 + a ) * 2), b = 5;
+int c = a;
+b = !a + 2;
+
+if (a == 5)
+	if (b < 4)
+		if (!c)
+			a = a + 2;
+else
+	a = 10;
+
+b = c;
+
+while (a < 10)
+	if (b == 6)
+		break;
+	++a;
