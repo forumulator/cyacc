@@ -4,6 +4,7 @@
 %{
 #include <math.h>  /* For math functions, cos(), sin(), etc. */
 #include "calc.h"  /* Contains definition of `symrec'        */
+#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,6 +17,14 @@
 #define JUMP_LABEL_NUMBER 0
 #define JUMP_LABEL_NAME 1
 #define JUMP_PATCH 2
+
+#define UNDEF_TYPE
+#define COMPOUND_TYPE 2
+#define BASIC_TYPE 0
+
+#define CHAR 1
+#define INT 2
+#define FLOAT 3
 
 int vtype;
 FILE *outfile;
@@ -33,21 +42,40 @@ struct bigop {
 };
 
 int BIGOPS_NUM;
+struct list *nested;
+int nlabel = 0;
+int depth = 0;
 
-struct expr_type 
-create_const_expr(char *const_str);
+// Builtin type info.
+struct {
+  char *name;
+  int size;
+} 
+basic_types = {
+  {"void", 0},
+  {"char", 1},
+  {"int", 4},
+  {"float", 4},
+  {"short", 2},
+  {"long", 8}
+};
+
 
 %}
 
 %union {
 double  val;  /* For returning numbers.                   */  
 char *id_name;
+char *t_name;
 symrec *sym;
 struct expr_type e;
-int type;
+struct type type;
 int patch;
 struct pair dual_patch;
 struct loop_type loop;
+int ttype;
+struct type_list *tlist;
+struct list *l;
 }
 
 %token OR_OP AND_OP EQ_OP NE_OP
@@ -68,12 +96,17 @@ struct loop_type loop;
 %type <dual_patch> else_clause 
 %type <loop> while_clause
 %type <e> expr primary_expr opt_init function_call
-%type <type> var_type var_dlist single_decl
+%type <type> type_name compound_type
+%type <l> var_dlist var_definition
 %type <sym> symbol_name
+%type <ttyp> type_type
+%type <t_name> opt_typ_name;
+%type <tlist> opt_member_list member_list
 
 // %precedence mult_op
 // %precedence ad_op
 
+%left ','
 %right '='
 %left OR_OP
 %left AND_OP
@@ -88,18 +121,19 @@ struct loop_type loop;
 %right INC_OP DEC_OP 
 %right '!' '~'
 %left UMINUS     /* Negation--unary minus */
-%left ','
+%left '.'
+
 
 /* Grammar follows */
 
 %%
 
-// NEW
- 
 
 input :   /* empty */
       | input statement
+      | type_definition
 ;
+
 
 statement     : declaration_statement {}
               | jump_statement {}
@@ -107,7 +141,113 @@ statement     : declaration_statement {}
               | error { yyerrok; }
               | selection_statement {}
               | iterative_statement {}
+              | block_statement {}
         ;
+
+/* TODO: Differentiate between stmts inside 
+and outside functions */
+block_statement : begin_sub '{' input '}' end_sub
+                ;
+
+begin_sub :   /* eps */
+              {
+                nlabel = label_no;
+                list_prepend_elem(&nested, 
+                  list_create_elem((void *)nlabel));
+                depth++;
+                out_label();
+              }
+          ;
+
+end_sub   :   /* eps */
+              {
+                list_pop_front(&nested);
+                nlabel = (int) nested->data;
+                delsym_scope(depth);
+                depth--;
+              }
+          ;
+
+type_definition : aliasing ';'
+                | compound_type ';'
+                ;
+
+// Forward declarations of structs ignored for now
+compound_type  : type_type opt_typ_name '{' member_list '}'
+                    {
+                      if (get_struct($2))
+                        error("Redefinition of struct");
+                      /* TODO: Differentiate b/w STRUCT and
+                       * UNION */
+                      $$.val.stype = create_struct($2, $4);
+                      $$.ttype = COMPOUND_TYPE;
+                    }
+                  | type_type IDENTIFIER
+                    {
+                      /* TODO: Add forward declarations */
+                      $$.val.stype = get_struct($2);
+                      $$.ttype = COMPOUND_TYPE;
+                    }
+                  ;
+
+type_type : STRUCT { $$ = STRUCT; } 
+          | UNION  { $$ = UNION; }
+          ;
+
+opt_typ_name: /* empty */ { $$ = ""; }
+            | IDENTIFIER  { copy_name(&$$, $1); }
+            ; 
+
+/* Add case when the member list can 
+also be empty */
+member_list:  mem_declaration opt_member_list
+              {
+                // Join the two lists. 
+                struct type_list *mem = $1;
+                while (mem->next)
+                  mem = mem->next;
+                mem->next = $2;
+                $$ = $1;
+              }
+
+           ;
+
+mem_declaration : type_name id_list ';'
+                  {
+                    /* TODO: Check for completeness of 
+                     * type here */
+                    // Set types for all members
+                    struct type_list *mem = $2;
+                    while (mem) {
+                      mem->typerec = $1;
+                      mem = mem->next; 
+                    }
+                    $$ = $2;
+                  }
+                ;
+
+id_list         : IDENTIFIER
+                  {
+                    $$ = create_member($1, NULL);
+                  }
+                | IDENTIFIER ',' id_list
+                  {
+                    $$ = create_member($1, $3); 
+                  }
+                ;
+
+aliasing  : TYPEDEF type_name IDENTIFIER
+            { 
+              struct type *t;
+              if (t = get_alias($3))  {
+                if (*t != $1)
+                  error("Conflicting types for typedef")
+              }
+              else 
+                create_alias($2, $3);
+            }
+          ;
+
 
 expression_statement  :  expr ';'
                       |  /*empty*/  ';'
@@ -182,42 +322,77 @@ else_clause   :  ELSE {
                  }
               ;
 
-declaration_statement  : var_type var_dlist ';' {
-                $2 = $1; 
-            }
-          ;
+declaration_statement : type_name var_dlist ';' 
+                        {
+                          struct list *node = $2;
+                          struct symrec *sym;
+                          /* TODO: Check for completeness of 
+                            type here */
+                          // Backpatch
+                          while (node) {
+                            sym = (symrec *) node->data;
+                            sym->type = $1;
+                            node = node->next;
+                          }
+                        }
+                      ;
           
-var_dlist : single_decl ',' var_dlist { $1 = $$; }
-          | single_decl { $1 = $$; }
+var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; }
+          | var_definition { $$ = $1; }
           ;
 
-single_decl : symbol_name opt_init {             
-                $1->type = $$;                
-                // If opt_init didn't go to EPS
-                // generate the int. code for assingment
-                if ($2.type != -1) {
-                    printf("[%d]: %s\n", $1->type, $1->name);
-                    out_assign($1->name, $2);
-                }
-              }
-            ;
+var_definition  : symbol_name opt_init 
+                  {
+                    struct list *node = list_create_elem($1);
+                    $1->type = $$;                
+                    
+                    // Assign result of expr to vaiable
+                    // This is should be delayed to after the 
+                    // type backpatch to check coercibility
+                    if ($2.type.ttype != UNDEF_TYPE) {
+                        out_assign($1->name, $2);
+                    }
+                  }
+                ;
 
 symbol_name : IDENTIFIER {
               // Create a new symbol table record
               // and assign it the thing from the old record   
-              symrec *rec = getsym($1);
+              symrec *rec = getsym($1); 
+              struct type t; t.ttype = UNDEF_TYPE;
               if (rec) {
-                // printf("Red of %s\n", $1);
                 error("Redefinition of symbol");
               }
-              rec = putsym($1, -1);
+              rec = putsym($1, t);
               $$ = rec;
             }              
           ;
 
-var_type  : INT     { $$ = 1; }
-          | FLOAT   { $$ = 2; }
-          | CHAR    { $$ = 0; }
+/* Take care of incomplete type 
+error messages for empty structs */
+type_name : INT    
+            { 
+              $$.ttype = BASIC_TYPE;
+              $$.val.basic = INT;
+            }
+          | FLOAT
+            { 
+              $$.ttype = BASIC_TYPE;
+              $$.val.basic = INT;
+            }
+          | CHAR
+            { 
+              $$.ttype = BASIC_TYPE;
+              $$.val.basic = INT;
+            }
+          | compound_type { $$ = $1; }
+          | IDENTIFIER
+            {
+              struct type *rec = get_alias($1);
+              if (!rec)
+                error("Not a valid type");
+              $$ = *rec;
+            }
           ;
 
 opt_init  :  '=' expr   { $$ = $2; }
@@ -283,6 +458,18 @@ actual_params : expr
 // %right INC_OP DEC_OP 
 // %right '!' '~'
 expr    : primary_expr { $$ = $1; }
+        | expr '.' IDENTIFIER 
+          {
+            if ($1.type.ttype != COMPOUND_TYPE)
+              error("request for member in something not a structure or union");
+            int oft = struct_calc_offset($1.val.stype, $3);
+            if (oft == -1)
+              error("struct has no member named this");
+            $$.type = struct_get_elem($1.val.stype, $3);
+            $$.val.quad_no = next_quad;
+            $$.ptr = QUAD_PTR;
+            out_member_ref($1, oft);
+          }
         | '!' expr  { parse_unary_expr(&$$, $2, '!'); }
         | '~' expr  { parse_unary_expr(&$$, $2, '~'); }
         | '-' expr %prec UMINUS  { parse_unary_expr(&$$, $2, '-'); }
@@ -362,6 +549,10 @@ main ()
   next_quad = 0;
   label_no = 1; patch_idx = 0;
   int i;
+
+  init_tables();
+  nested = NULL;
+
   for (i = 0; i< MAX_NEST_DEPTH; ++i)
     patches[i] = 0;
 
@@ -618,12 +809,25 @@ temp_var_name(int idx, char *buf) {
 }
 
 
-struct expr_type 
-create_const_expr(char *const_str) {
-  struct expr_type e;
-  e.type = get_const_type(const_str);
-  e.ptr = CONST_PTR;
-  e.val.const_str = const_str;
+int 
+size_of (struct type t) {
+  if (t.ttype != BASIC_TYPE) 
+    // Struct or union
+    return (t.val.stype)->size;
+  else
+    return basic_types[t.val.basic].size;
+} 
 
-  return e;
+void 
+out_member_ref (struct expr_type e, int offset) {
+  const char *mem_ref_str = "%s = %s[%d]";
+  char *lval = malloc(10 * sizeof(char));
+  char *fr;
+  temp_var_name(next_quad++, lval);
+  int mf = assign_name_to_buf(&fr, e);
+
+  fprintf(outfile, mem_ref_str, lval, fr, offset);
+  if (mf) free(fr);
+  free(lval);
+  return;
 }

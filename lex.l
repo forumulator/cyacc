@@ -61,7 +61,7 @@ void count();
 					  strcpy(id_name, yytext);
 					  yylval.id_name = id_name;
 					  return(check_type());
-			}
+					}
 
 0[xX]{H}+{IS}?		{ count();  yylval.e.val.const_str = yytext; return(CONSTANT);}
 0{D}+{IS}?		{ count();  yylval.e.val.const_str = yytext; return(CONSTANT);}
