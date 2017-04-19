@@ -16,7 +16,7 @@ init_tables () {
 }
 
 struct struct_type 
-*create_struct (char *name, struct type_list* elems) { 
+*create_struct (char *name, struct type_list* elems, int incompl) { 
   ss = malloc(sizeof(struct struct_type));
   ss->name = name;
 
@@ -27,8 +27,14 @@ struct struct_type
     node = node->next;
   }
   
-  ss->size = size;
-  ss->elems = elems;
+  if (incompl) {
+    ss->size = -1;
+    ss->elems = NULL;
+  }
+  else {
+    ss->size = size;
+    ss->elems = elems;
+  }
 
   // Create new node
   struct *list newnode = malloc(sizeof(struct list));

@@ -101,7 +101,7 @@ struct list *l;
 %type <sym> symbol_name
 %type <ttyp> type_type
 %type <t_name> opt_typ_name;
-%type <tlist> opt_member_list member_list
+%type <tlist> opt_member_decl_list member_decl_list member_decl
 
 // %precedence mult_op
 // %precedence ad_op
@@ -142,7 +142,12 @@ statement     : declaration_statement {}
               | selection_statement {}
               | iterative_statement {}
               | block_statement {}
+              | label_stmt {}
         ;
+
+// User defined label
+label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s ", $1); }
+          ;
 
 /* TODO: Differentiate between stmts inside 
 and outside functions */
@@ -173,22 +178,26 @@ type_definition : aliasing ';'
                 ;
 
 // Forward declarations of structs ignored for now
-compound_type  : type_type opt_typ_name '{' member_list '}'
+/* TODO: Allow definitions of recursive structs by 
+ * combining the two */
+compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                     {
                       if (get_struct($2))
                         error("Redefinition of struct");
                       /* TODO: Differentiate b/w STRUCT and
                        * UNION */
-                      $$.val.stype = create_struct($2, $4);
+                      $$.val.stype = create_struct($2, $4, false);
                       $$.ttype = COMPOUND_TYPE;
                     }
-                  | type_type IDENTIFIER
-                    {
-                      /* TODO: Add forward declarations */
-                      $$.val.stype = get_struct($2);
-                      $$.ttype = COMPOUND_TYPE;
-                    }
-                  ;
+                | type_type IDENTIFIER
+                  {
+                    struct struct_type *s = get_struct($2);
+                    if (!s)
+                      // Forward declaration
+                      $$.val.stype = create_struct($2, NULL, true);
+                    $$.ttype = COMPOUND_TYPE;
+                  }
+                ;
 
 type_type : STRUCT { $$ = STRUCT; } 
           | UNION  { $$ = UNION; }
@@ -200,7 +209,7 @@ opt_typ_name: /* empty */ { $$ = ""; }
 
 /* Add case when the member list can 
 also be empty */
-member_list:  mem_declaration opt_member_list
+member_decl_list:  member_decl opt_member_decl_list
               {
                 // Join the two lists. 
                 struct type_list *mem = $1;
@@ -212,12 +221,12 @@ member_list:  mem_declaration opt_member_list
 
            ;
 
-mem_declaration : type_name id_list ';'
+member_decl : type_name id_list ';'
                   {
-                    /* TODO: Check for completeness of 
-                     * type here */
                     // Set types for all members
                     struct type_list *mem = $2;
+                    if (size_of($1) == -1)
+                      error("member has incomplete type");
                     while (mem) {
                       mem->typerec = $1;
                       mem = mem->next; 
@@ -328,6 +337,9 @@ declaration_statement : type_name var_dlist ';'
                           struct symrec *sym;
                           /* TODO: Check for completeness of 
                             type here */
+                          if (size_of($1) == -1)
+                            error("incomplete type")
+
                           // Backpatch
                           while (node) {
                             sym = (symrec *) node->data;

@@ -1,15 +1,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 #include "b.h"
 
 int sq(int x) {
 	return x*x;
 }
-
-struct vv {
-	int d;
-};
 
 int abdf = 2;
 typedef int intt;
@@ -24,11 +21,18 @@ int main() {
 	// struct c
 	// typedef int a b;
 	// struct c;
-	struct vv u, v;
-	v.e = -4;
-	goto ddone;
-	u.d = 5;
-	printf("%d\n", (v = u).d);
+	// struct vv u, v;
+	int *q;
+	char  *(*p)[5];
+	// int an[][4] = {1, 2, 3, 4};
+	// p = &an;
+	int aaa[5] = {1, 2, 3, 4, 5};
+	p = &aaa;
+	printf("%d, %d, %d\n", sizeof(char *), sizeof(*q), sizeof(*p));
+	printf("%x, %x, %x\n", &(p[5]), &((*p)[100]), aaa);
+	// printf("p[2]: %d\n", sizeof(int a[5][5]));
+	// u.d = 5;
+	// printf("%d\n", (v = u).d);
 	if (a == 6) {
 		a += 2;
 	} b = 5;
