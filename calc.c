@@ -76,11 +76,13 @@ struct struct_type
   return NULL;
 }
 
+// Get element by offset
 struct type 
-struct_get_elem (struct struct_type *stype, char *name) {
+struct_get_elem (struct struct_type *stype, int oft) {
   struct memb_list *node = stype->elems;
+  int count = 1;
   while (node) {
-    if (!strcmp(node->name, name))
+    if (oft == count++)
       return node->typerec;
     node = node->next;
   }

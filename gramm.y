@@ -15,7 +15,7 @@
 #define SYM_PTR 2
 #define CONST_PTR 1
 #define MAX_NEST_DEPTH 256
-#define ARRAY_MAX_DIMEN 256
+#define MAX_ARRAY_DIMEN 256
 
 #define JUMP_LABEL_NUMBER 0
 #define JUMP_LABEL_NAME 1
@@ -36,6 +36,7 @@
 #define is_pointer(x) ((x).ttype == PTR_TYPE)
 #define is_int_type(t) ((t).type == BASIC && 
                     ((t).val.basic == INT) || ((t).val.basic == CHAR))
+#define SET_NOT_ARRAY(x) x.array.n = 0; x.array.dimen = NULL; x.array.size = 1;
 
 int vtype;
 FILE *outfile;
@@ -104,7 +105,7 @@ struct list *l;
 %token CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOLATILE VOID
 %token STRUCT UNION ENUM ELLIPSIS
 
-%token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+%token CASE DEFAULT SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 %token SIZEOF
 
 
@@ -138,12 +139,15 @@ struct list *l;
 %left LSHFT_OP RSHFT_OP
 %left '-' '+'
 %left '*' '/' '%'
+%left DEREF
 %right INC_OP DEC_OP 
 %right '!' '~'
 %left UMINUS     /* Negation--unary minus */
 %left '.'
-// %left '*'
-// %left INDEXING
+%left '['
+
+%noassoc IF
+%noassoc ELSE
 
 /* Grammar follows */
 
@@ -209,6 +213,7 @@ compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                        * UNION */
                       $$.val.stype = create_struct($2, $4, false);
                       $$.ttype = COMPOUND_TYPE;
+                      SET_NOT_ARRAY($$);
                     }
                 | type_type IDENTIFIER
                   {
@@ -217,6 +222,7 @@ compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                       // Forward declaration
                       $$.val.stype = create_struct($2, NULL, true);
                     $$.ttype = COMPOUND_TYPE;
+                    SET_NOT_ARRAY($$);
                   }
                 ;
 
@@ -370,8 +376,15 @@ declaration_statement : type_name var_dlist ';'
                                 error("incomplete array type for varibale");
                               sym->type = $1;
                             }
-                            else {
-                              // For pointers
+                            else if (sym->type.ttype == PTR_TYPE) {
+                              struct type *t = sym->type.val.ptr_to;
+                              // Travese the list of ptr types
+                              while (t->ttype == PTR_TYPE)
+                                t = t->val.ptr_to;
+                              // Set the type of the last node to the basic
+                              // or compound type that is type_name
+                              if (t->ttype == INCOMP_TYPE)
+                                *t = $1;
                             }
                             sym->type.array.dimen = arr;
                             sym->type.array.dimen = realloc(sym->table.array, sym->type.array.n);
@@ -404,30 +417,45 @@ var_definition  : symbol_name opt_init
                   }
                 ;
 
+// TAKE CARE OF PASSING BOTH NAME and 
+// TYPE UP the TREE
 symbol_name : IDENTIFIER 
               {
                 copy_name(&$$.name, $1);
                 // Create a new symbol table record
                 // and assign it the thing from the old record  
                 $1.type.ttype = INCOMP_TYPE; 
-                $1.array.n = 0;
-                $1.array.size = 1;
+                SET_NOT_ARRAY($$.type);
               }              
+            /* TODO: Size decided by initializers */
             | symbol_name '[' CONSTANT ']'
               {
+                struct type *t = &($1.type);
                 if (const_type($3.val.const_str) != INT)
                   error("size of array has non-integer type");
                 int size = const_val($3.val.const_str);
-                if (!$1.array.n) {
-                  $1.array.dimen = malloc(ARRAY_MAX_DIMEN * sizeof(int));
-                  $1.array.n = 1;
+                if (!is_array(*t)) {
+                  t->array.dimen = malloc(MAX_ARRAY_DIMEN * sizeof(int));
+                  t->array.n = 1;
                 }
                 else
-                  $1.array.n++;
-                $1.array.dimen[n - 1] = size;
-                $1.array.size *= size;
+                  t->array.n++;
+                if (t->array.n == MAX_ARRAY_DIMEN)
+                  error("Can't have more than 256 dimension array");
+                t->array.dimen[n - 1] = size;
+                t->array.size *= size;
+                $$ = $1;
               }
-            // | '*' symbol_name {}
+            | '*' symbol_name
+              {
+                struct type *to = malloc(sizeof(struct type));
+                *to = $2.type; // TYPE COPYING
+                $$.type.ttype = PTR_TYPE;
+                $$.type.val.ptr_to = to;
+                SET_NOT_ARRAY($$.type);
+                $$.name = $1.name;
+              }
+            | '(' symbol_name ')' { $$ = $2; }
 
           ;
 
@@ -465,9 +493,8 @@ opt_init  :  '=' expr   { $$ = $2; }
 
 /* TODO: array initializers, struct initializers */
 primary_expr  : CONSTANT  { 
-                  int len = strlen($1.val.const_str);
-                  char *temp = malloc((len + 1) * sizeof(char));
-                  strcpy(temp, $1.val.const_str);
+                  char *temp;
+                  copy_name(&temp, $1.val.const_str);
                   $$ = create_const_expr(temp);
                 }
               | IDENTIFIER { 
@@ -475,8 +502,7 @@ primary_expr  : CONSTANT  {
                   if (!rec) {
                     error("Undefined symbol\n");
                   }
-                  $$.ptr = SYM_PTR; $$.type = rec->type;
-                  $$.val.sym = rec; 
+                  $$ = create_sym_expr(rec);
                 }
               | '(' expr ')' { $$ = $2; }
               | function_call
@@ -537,18 +563,7 @@ expr    : primary_expr { $$ = $1; }
             out_index($1, $2);
 
           }
-        | expr '.' IDENTIFIER 
-          {
-            if ($1.type.ttype != COMPOUND_TYPE)
-              error("request for member in something not a structure or union");
-            int oft = struct_calc_offset($1.val.stype, $3);
-            if (oft == -1)
-              error("struct has no member named this");
-            $$.type = struct_get_elem($1.val.stype, $3);
-            $$.val.quad_no = next_quad;
-            $$.ptr = QUAD_PTR;
-            out_member_ref($1, oft);
-          }
+        | expr '.' IDENTIFIER { out_member_ref($1, $3); }
         | '!' expr  { parse_unary_expr(&$$, $2, '!'); }
         | '~' expr  { parse_unary_expr(&$$, $2, '~'); }
         | '-' expr %prec UMINUS  { parse_unary_expr(&$$, $2, '-'); }
@@ -575,7 +590,7 @@ expr    : primary_expr { $$ = $1; }
           {
             if (!is_coercible($2, $4.type))
               error("types are not coercible");
-            $$.type = $2.type;
+            $$.type = $2;
             $$.val.quad_no = next_quad;
             $$.ptr = QUAD_PTR;
             out_gen_quad($4);
@@ -808,15 +823,6 @@ void backpatch(int label, int patch) {
   free(ltext);
 }
 
-void out_label () {
-    char *ltext; 
-    make_label_text(&ltext, label_no++);
-    printf("In outlabel %d\n", label_no - 1);
-    fprintf(outfile, "%s: ", ltext);
-    free(ltext);
-    printf("At end\n");
-}
-
 
 void
 make_label_text (char **buf, int label) {
@@ -933,18 +939,20 @@ size_of (struct type t) {
   else return -1;
 } 
 
-void 
-out_member_ref (struct expr_type e, int offset) {
-  const char *mem_ref_str = "%s = %s[%d]";
-  char *lval = malloc(10 * sizeof(char));
-  char *fr;
-  temp_var_name(next_quad++, lval);
-  int mf = assign_name_to_buf(&fr, e);
+struct expr_type
+out_member_ref (struct expr_type e, char *mem) {
+  struct expr_type ret;
+  if (e.type.ttype != COMPOUND_TYPE)
+    error("request for member in something not a structure or union");
+  int oft = struct_calc_offset(e.val.stype, mem);
+  if (oft == -1)
+    error("struct has no member named this");
+  ret.type = struct_get_elem(e.val.stype, oft);
+  ret.val.quad_no = next_quad;
+  ret.ptr = QUAD_PTR;
 
-  fprintf(outfile, mem_ref_str, lval, fr, offset);
-  if (mf) free(fr);
-  free(lval);
-  return;
+  out_const_index(e, oft);
+  return ret;
 }
 
 void
@@ -953,7 +961,7 @@ out_index (struct expr_type e, struct expr_type idx) {
   imf = assign_name_to_buf(&iname, idx);
   mf = assign_name_to_buf(&name, e);
   temp_var_name(next_quad++, tname);
-  fprintf(outfile, "%s = %s [ %s ]\n", tname, name, iname);
+  fprintf(outfile, "%s = %s [%s]\n", tname, name, iname);
 
   if (mf) free(name);
   if (imf) free(imf);
@@ -981,4 +989,13 @@ out_deref (struct expr_type e) {
   fprintf(outfile, "%s = * %s\n", temp, name);
   free(temp);
   if (mf) free(name);
+}
+
+void out_label () {
+  char *ltext; 
+  make_label_text(&ltext, label_no++);
+  printf("In outlabel %d\n", label_no - 1);
+  fprintf(outfile, "%s: ", ltext);
+  free(ltext);
+  printf("At end\n");
 }

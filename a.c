@@ -32,6 +32,7 @@ int main() {
 	// typedef int a b;
 	// struct c;
 	// struct vv u, v;
+	int ght[][3];
 	float g1; struct bst *g2;
 	char cf = (char)g2;
 	int i;
