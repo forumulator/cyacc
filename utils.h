@@ -16,8 +16,11 @@ void *list_pop_front (struct list **l) ;
 
 void copy_name (char **, char *);
 
-struct expr_type 
-create_const_expr(char *const_str);
+struct expr_type create_const_expr(char *const_str);
 
-int 
-size_of (struct type t);
+int size_of (struct type t);
+int is_coercible (struct type t);
+
+struct type pointer_deref (struct type t);
+struct type arr_reduce_dimen (struct type t);
+

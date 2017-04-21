@@ -33,7 +33,9 @@
 #define SIZEOFPTR 4
 
 #define is_array(x) ((x).array.n > 0)
-
+#define is_pointer(x) ((x).ttype == PTR_TYPE)
+#define is_int_type(t) ((t).type == BASIC && 
+                    ((t).val.basic == INT) || ((t).val.basic == CHAR))
 
 int vtype;
 FILE *outfile;
@@ -241,18 +243,18 @@ member_decl_list:  member_decl opt_member_decl_list
            ;
 
 member_decl : type_name id_list ';'
-                  {
-                    // Set types for all members
-                    struct memb_list *mem = $2;
-                    if (size_of($1) == -1)
-                      error("member has incomplete type");
-                    while (mem) {
-                      mem->typerec = $1;
-                      mem = mem->next; 
-                    }
-                    $$ = $2;
-                  }
-                ;
+              {
+                // Set types for all members
+                struct memb_list *mem = $2;
+                if (size_of($1) == -1)
+                  error("member has incomplete type");
+                while (mem) {
+                  mem->typerec = $1;
+                  mem = mem->next; 
+                }
+                $$ = $2;
+              }
+            ;
 
 id_list         : IDENTIFIER
                   {
@@ -371,7 +373,8 @@ declaration_statement : type_name var_dlist ';'
                             else {
                               // For pointers
                             }
-                            sym->type.array = arr;
+                            sym->type.array.dimen = arr;
+                            sym->type.array.dimen = realloc(sym->table.array, sym->type.array.n);
                             node = node->next;
                           }
                         }
@@ -428,8 +431,9 @@ symbol_name : IDENTIFIER
 
           ;
 
-/* Take care of incomplete type 
+/* TODO: Take care of incomplete type 
 error messages for empty structs */
+/* TODO: Handle array and ptr types here too */
 type_name : INT    
             { 
               $$.ttype = BASIC_TYPE;
@@ -525,12 +529,12 @@ expr    : primary_expr { $$ = $1; }
         | expr indexing
           {
               /* TODO: Add the check for pointer here */
-            if (!is_array($1.type))
+            if (!is_array($1.type) || !is_pointer($1.type))
               error("subscripted value is neither array nor pointer nor vector");
             $$.val.quad_no = next_quad;
             $$.ptr = QUAD_PTR;
-            $$.type = arr_reduce_dimen($1);
-            out_indexing($1, $2);
+            $$.type = arr_reduce_dimen($1.type);
+            out_index($1, $2);
 
           }
         | expr '.' IDENTIFIER 
@@ -566,6 +570,23 @@ expr    : primary_expr { $$ = $1; }
               error("lvalue required as increment operand");
             }
             out_assign($2.val.sym->name, $$);
+          }
+        | '(' type_name ')' expr
+          {
+            if ($2.ttype == COMPOUND_TYPE) // or array
+              error("conversion to non-scalar type requested");
+            if (!is_coercible($2, $4.type))
+              error("non-interconvertible types");
+
+          }
+        | '*' expr %prec DEREF
+          {
+            if (!is_array($1.type) || !is_pointer($1.type))
+              error("Attempting to dereference non-pointer");
+            $$.val.quad_no = next_quad;
+            $$.ptr = QUAD_PTR;
+            $$.type = pointer_deref($2.type);
+            out_deref($1);
           }
         | expr '*' expr  { parse_expr(&$$, $1, $3, '*'); }
         | expr '/' expr  { parse_expr(&$$, $1, $3, '/'); }
@@ -916,33 +937,37 @@ out_member_ref (struct expr_type e, int offset) {
 }
 
 void
-out_indexing (struct expr_type e, struct expr_type idx) {
+out_index (struct expr_type e, struct expr_type idx) {
   char *name, *iname, tname[10]; int mf, imf;
   imf = assign_name_to_buf(&iname, idx);
   mf = assign_name_to_buf(&name, e);
-  temp_var_name(next_quad, tname);
+  temp_var_name(next_quad++, tname);
   fprintf(outfile, "%s = %s [ %s ]\n", tname, name, iname);
 
   if (mf) free(name);
   if (imf) free(imf);
 }
 
-/* TODO: Also add pointer deref. here */
-struct type
-arr_reduce_dimen (struct type t) {
-    struct type ret;
-    if (!is_array(t)) {
-      ret.ttype = UNDEF_TYPE;
-      return ret;
-    }
-    ret = t;
-    // Arrays are copied by value here.
-    ret.array.dimen = malloc((t.array.n - 1) * sizeof(int));
-    ret.size /= t.array.dimen[0];
+void 
+out_const_index (struct expr_type e, const int c) {
+  /* TODO: Take care of sizes (10 here) by allocating
+   * global buffers maybe */
+  char *const_str = malloc(10 * sizeof(int));
+  snprintf(const_str, 10, "%d", c);
+  out_index(e, create_const_expr(const_str));
+  free(const_str);
+}
 
-    int i;
-    for (i = 1; i < t.array.n; ++i)
-      ret.array.dimen[i - 1] = t.array.dimen[i];
-    ret.array.n = t.array.n - 1;
-    return ret;
+void 
+out_deref (struct expr_type e) {
+  if (is_array(e))
+    out_const_index(e, 0); // Index at offset 0
+  char *temp, *name; int mf;
+  mf = assign_name_to_buf(&name, e);
+  temp = malloc(10 * sizeof(char));
+  temp_var_name(next_quad++, temp);
+
+  fprintf(outfile, "%s = * %s\n", temp, name);
+  free(temp);
+  if (mf) free(name);
 }

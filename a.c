@@ -12,6 +12,16 @@ int abdf = 2;
 typedef int intt;
 typedef int intt;
 
+struct bst {
+	int a;
+	char *b;
+};
+
+struct bst1 {
+	int a;
+	char *b;
+};
+
 int main() {
 
 	printf("%x\n", &abdf);
@@ -22,6 +32,8 @@ int main() {
 	// typedef int a b;
 	// struct c;
 	// struct vv u, v;
+	float g1; struct bst *g2;
+	char cf = (char)g2;
 	int i;
 	struct agh *bgh;
 	int pq[6] = {{1, 2}, {3, 4}, { 5, 6}};

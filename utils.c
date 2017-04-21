@@ -1,5 +1,37 @@
 #include "utils.h"
 
+/* TODO: Also add pointer deref. here */
+struct type
+arr_reduce_dimen (struct type t) {
+  struct type ret;
+  if (!is_array(t)) {
+    ret.ttype = UNDEF_TYPE;
+    return ret;
+  }
+  ret = t;
+  // Arrays are copied by value here.
+  ret.array.dimen = malloc((t.array.n - 1) * sizeof(int));
+  ret.size /= t.array.dimen[0];
+
+  int i;
+  for (i = 1; i < t.array.n; ++i)
+    ret.array.dimen[i - 1] = t.array.dimen[i];
+  ret.array.n = t.array.n - 1;
+  return ret;
+}
+
+struct type
+pointer_deref (struct type t) {
+  struct type ret;
+  ret.type = UNDEF_TYPE;
+  if (is_array(t))
+    return arr_reduce_dimen(t);
+  else if (!is_pointer(t))
+    return ret;
+
+  return *(t.val.ptr_to);
+}
+
 struct expr_type 
 create_const_expr (char *const_str) {
   struct expr_type e;
