@@ -1,6 +1,8 @@
 // Todo: Add coercibility checks
 // Add string literals
 
+/* TODO: SET INDICES and #defines PROPERLY */
+
 %{
 #include <math.h>  /* For math functions, cos(), sin(), etc. */
 #include "calc.h"  /* Contains definition of `symrec'        */
@@ -13,6 +15,7 @@
 #define SYM_PTR 2
 #define CONST_PTR 1
 #define MAX_NEST_DEPTH 256
+#define ARRAY_MAX_DIMEN 256
 
 #define JUMP_LABEL_NUMBER 0
 #define JUMP_LABEL_NAME 1
@@ -21,10 +24,16 @@
 #define UNDEF_TYPE
 #define COMPOUND_TYPE 2
 #define BASIC_TYPE 0
+#define INCOMP_TYPE 999
 
 #define CHAR 1
 #define INT 2
 #define FLOAT 3
+
+#define SIZEOFPTR 4
+
+#define is_array(x) ((x).array.n > 0)
+
 
 int vtype;
 FILE *outfile;
@@ -68,13 +77,21 @@ double  val;  /* For returning numbers.                   */
 char *id_name;
 char *t_name;
 symrec *sym;
+struct {
+  char *name;
+  struct type type;
+} sym_npt; // stands for name and pointer types
+struct {
+  int type;
+  int val;
+} constant;
 struct expr_type e;
 struct type type;
 int patch;
 struct pair dual_patch;
 struct loop_type loop;
 int ttype;
-struct type_list *tlist;
+struct memb_list *tlist;
 struct list *l;
 }
 
@@ -98,10 +115,11 @@ struct list *l;
 %type <e> expr primary_expr opt_init function_call
 %type <type> type_name compound_type
 %type <l> var_dlist var_definition
-%type <sym> symbol_name
+%type <sym_npt> symbol_name
 %type <ttyp> type_type
 %type <t_name> opt_typ_name;
 %type <tlist> opt_member_decl_list member_decl_list member_decl
+%type <e> indexing
 
 // %precedence mult_op
 // %precedence ad_op
@@ -122,7 +140,8 @@ struct list *l;
 %right '!' '~'
 %left UMINUS     /* Negation--unary minus */
 %left '.'
-
+// %left '*'
+// %left INDEXING
 
 /* Grammar follows */
 
@@ -212,7 +231,7 @@ also be empty */
 member_decl_list:  member_decl opt_member_decl_list
               {
                 // Join the two lists. 
-                struct type_list *mem = $1;
+                struct memb_list *mem = $1;
                 while (mem->next)
                   mem = mem->next;
                 mem->next = $2;
@@ -224,7 +243,7 @@ member_decl_list:  member_decl opt_member_decl_list
 member_decl : type_name id_list ';'
                   {
                     // Set types for all members
-                    struct type_list *mem = $2;
+                    struct memb_list *mem = $2;
                     if (size_of($1) == -1)
                       error("member has incomplete type");
                     while (mem) {
@@ -337,13 +356,22 @@ declaration_statement : type_name var_dlist ';'
                           struct symrec *sym;
                           /* TODO: Check for completeness of 
                             type here */
-                          if (size_of($1) == -1)
+                          if ($1.ttype == UNDEF_TYPE)
                             error("incomplete type")
 
                           // Backpatch
                           while (node) {
                             sym = (symrec *) node->data;
-                            sym->type = $1;
+                            struct array_type arr = sym->type.array;
+                            if (sym->type.ttype == INCOMP_TYPE) {
+                              if ($1.ttype == INCOMP_TYPE)
+                                error("incomplete array type for varibale");
+                              sym->type = $1;
+                            }
+                            else {
+                              // For pointers
+                            }
+                            sym->type.array = arr;
                             node = node->next;
                           }
                         }
@@ -353,10 +381,15 @@ var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; 
           | var_definition { $$ = $1; }
           ;
 
+
 var_definition  : symbol_name opt_init 
                   {
-                    struct list *node = list_create_elem($1);
-                    $1->type = $$;                
+                    symrec *rec = getsym($1.name);
+                    if (rec) {
+                      error("Redefinition of symbol");
+                    }
+                    rec = putsym($1.name, $1.type);
+                    $$ = list_create_elem(rec);            
                     
                     // Assign result of expr to vaiable
                     // This is should be delayed to after the 
@@ -364,20 +397,35 @@ var_definition  : symbol_name opt_init
                     if ($2.type.ttype != UNDEF_TYPE) {
                         out_assign($1->name, $2);
                     }
+                    free($1.name);
                   }
                 ;
 
-symbol_name : IDENTIFIER {
-              // Create a new symbol table record
-              // and assign it the thing from the old record   
-              symrec *rec = getsym($1); 
-              struct type t; t.ttype = UNDEF_TYPE;
-              if (rec) {
-                error("Redefinition of symbol");
+symbol_name : IDENTIFIER 
+              {
+                copy_name(&$$.name, $1);
+                // Create a new symbol table record
+                // and assign it the thing from the old record  
+                $1.type.ttype = INCOMP_TYPE; 
+                $1.array.n = 0;
+                $1.array.size = 1;
+              }              
+            | symbol_name '[' CONSTANT ']'
+              {
+                if (const_type($3.val.const_str) != INT)
+                  error("size of array has non-integer type");
+                int size = const_val($3.val.const_str);
+                if (!$1.array.n) {
+                  $1.array.dimen = malloc(ARRAY_MAX_DIMEN * sizeof(int));
+                  $1.array.n = 1;
+                }
+                else
+                  $1.array.n++;
+                $1.array.dimen[n - 1] = size;
+                $1.array.size *= size;
               }
-              rec = putsym($1, t);
-              $$ = rec;
-            }              
+            // | '*' symbol_name {}
+
           ;
 
 /* Take care of incomplete type 
@@ -411,6 +459,7 @@ opt_init  :  '=' expr   { $$ = $2; }
           | /* empty */ { $$.type = -1; }
         ;
 
+/* TODO: array initializers, struct initializers */
 primary_expr  : CONSTANT  { 
                   int len = strlen($1.val.const_str);
                   char *temp = malloc((len + 1) * sizeof(char));
@@ -469,7 +518,21 @@ actual_params : expr
 // %left '*' '/' '%'
 // %right INC_OP DEC_OP 
 // %right '!' '~'
+
+// Note that basic types can be inconverted , but compound types can't
+// i.e struct test t; int b = (int)t; is an error
 expr    : primary_expr { $$ = $1; }
+        | expr indexing
+          {
+              /* TODO: Add the check for pointer here */
+            if (!is_array($1.type))
+              error("subscripted value is neither array nor pointer nor vector");
+            $$.val.quad_no = next_quad;
+            $$.ptr = QUAD_PTR;
+            $$.type = arr_reduce_dimen($1);
+            out_indexing($1, $2);
+
+          }
         | expr '.' IDENTIFIER 
           {
             if ($1.type.ttype != COMPOUND_TYPE)
@@ -531,6 +594,13 @@ expr    : primary_expr { $$ = $1; }
           }
         ;
 
+indexing  : '[' expr ']'
+            {
+              $$ = $2;
+              if ($2.type != INT) // or convertible to int
+                error("array subscript is not an integer");
+            }
+          ;
 /* End of grammar */
 %%
 
@@ -728,12 +798,6 @@ make_patch_text (char **buf, int patch) {
     snprintf(*buf, 10, "$%d     ", patch);  
 }
 
-int
-get_const_type (char *const_str) {
-  // check and return the type 
-  // of the constane here
-  return INT;
-}
 
 void
 parse_unary_expr (struct expr_type *result, 
@@ -823,11 +887,18 @@ temp_var_name(int idx, char *buf) {
 
 int 
 size_of (struct type t) {
-  if (t.ttype != BASIC_TYPE) 
+  int size = 0;
+  if (t.ttype == BASIC_TYPE) 
+    size = basic_types[t.val.basic].size;
+  else if (t.ttype == PTR_TYPE)
+    size = SIZEOFPTR;
+  else if (t.ttype == COMPOUND_TYPE)
     // Struct or union
-    return (t.val.stype)->size;
-  else
-    return basic_types[t.val.basic].size;
+    size = (t.val.stype)->size;
+
+  if (t.array.size >= 0)
+    return size * t.array.size;
+  else return -1;
 } 
 
 void 
@@ -842,4 +913,36 @@ out_member_ref (struct expr_type e, int offset) {
   if (mf) free(fr);
   free(lval);
   return;
+}
+
+void
+out_indexing (struct expr_type e, struct expr_type idx) {
+  char *name, *iname, tname[10]; int mf, imf;
+  imf = assign_name_to_buf(&iname, idx);
+  mf = assign_name_to_buf(&name, e);
+  temp_var_name(next_quad, tname);
+  fprintf(outfile, "%s = %s [ %s ]\n", tname, name, iname);
+
+  if (mf) free(name);
+  if (imf) free(imf);
+}
+
+/* TODO: Also add pointer deref. here */
+struct type
+arr_reduce_dimen (struct type t) {
+    struct type ret;
+    if (!is_array(t)) {
+      ret.ttype = UNDEF_TYPE;
+      return ret;
+    }
+    ret = t;
+    // Arrays are copied by value here.
+    ret.array.dimen = malloc((t.array.n - 1) * sizeof(int));
+    ret.size /= t.array.dimen[0];
+
+    int i;
+    for (i = 1; i < t.array.n; ++i)
+      ret.array.dimen[i - 1] = t.array.dimen[i];
+    ret.array.n = t.array.n - 1;
+    return ret;
 }

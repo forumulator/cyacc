@@ -16,12 +16,12 @@ init_tables () {
 }
 
 struct struct_type 
-*create_struct (char *name, struct type_list* elems, int incompl) { 
+*create_struct (char *name, struct memb_list* elems, int incompl) { 
   ss = malloc(sizeof(struct struct_type));
   ss->name = name;
 
   int size = 0;
-  struct type_list *node = elems;
+  struct memb_list *node = elems;
   while (node) {
     size += size_of(node->typerec);
     node = node->next;
@@ -53,9 +53,9 @@ struct struct_type
   return ss;
 }
 
-struct type_list *
-create_member (char *name, struct type_list *join) {
-  struct type_list *this = malloc(sizeof(struct type_list));
+struct memb_list *
+create_member (char *name, struct memb_list *join) {
+  struct memb_list *this = malloc(sizeof(struct memb_list));
   copy_name(&this->name, name);
   this->next = join;
   return this;
@@ -78,7 +78,7 @@ struct struct_type
 
 struct type 
 struct_get_elem (struct struct_type *stype, char *name) {
-  struct type_list *node = stype->elems;
+  struct memb_list *node = stype->elems;
   while (node) {
     if (!strcmp(node->name, name))
       return node->typerec;
@@ -91,7 +91,7 @@ struct_get_elem (struct struct_type *stype, char *name) {
 
 int 
 struct_calc_offset (struct struct_type *stype, char *name) {
-  struct type_list *node = stype->elems;
+  struct memb_list *node = stype->elems;
   int offset = 0;
   while (node) {
     if (!strcmp(node->name, name))

@@ -22,13 +22,35 @@ int main() {
 	// typedef int a b;
 	// struct c;
 	// struct vv u, v;
-	int *q;
+	int i;
+	struct agh *bgh;
+	int pq[6] = {{1, 2}, {3, 4}, { 5, 6}};
+	for (i = 0; i< 6; ++i) {
+		printf("%d ", pq[i]);
+	}
+	int *(q[5][6]);
 	char  *(*p)[5];
+	int yt[5];
+	int (*ts)[5][6] = malloc(30 *sizeof(int));
+	printf("Adds of %d, %d\n", &*ts[1], &(*ts)[1]);
+	// int bm[5][6] = *ts;
+	int *(rs[5]);
+	int *gf[5][6][7];
+	int (*(gh[5]))[6][7];
+	int *((*gg[5])[6]);
+	int as[4][5];
+	struct ah;
+	int bh[5][5][5];
+	int bt[4][5][6];
+	printf("%d\n", bt[4]);
 	// int an[][4] = {1, 2, 3, 4};
 	// p = &an;
 	int aaa[5] = {1, 2, 3, 4, 5};
 	p = &aaa;
-	printf("%d, %d, %d\n", sizeof(char *), sizeof(*q), sizeof(*p));
+	// printf("%d, %s", q, &ag);
+	// printf("%d, %d, %d\n", sizeof(aaa), (int (*(*)[5])[2][5])bh, sizeof(*p));
+	printf("%d, %d, %d\n", gf[0][0], sizeof(rs), sizeof(ts));
+	printf("%d, %d, %d\n", ts, &ts[1], &rs[1]);
 	printf("%x, %x, %x\n", &(p[5]), &((*p)[100]), aaa);
 	// printf("p[2]: %d\n", sizeof(int a[5][5]));
 	// u.d = 5;

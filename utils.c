@@ -1,7 +1,7 @@
 #include "utils.h"
 
 struct expr_type 
-create_const_expr(char *const_str) {
+create_const_expr (char *const_str) {
   struct expr_type e;
   e.type = get_const_type(const_str);
   e.ptr = CONST_PTR;
@@ -10,6 +10,12 @@ create_const_expr(char *const_str) {
   return e;
 }
 
+struct 
+const_type (char *const_str) {
+	/* TODO: Maybe set the type
+	* from the lexer itself */
+	return INT;
+}
 
 void 
 copy_name (char **buf, char *name) {
