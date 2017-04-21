@@ -49,6 +49,17 @@ const_type (char *const_str) {
 	return INT;
 }
 
+int
+is_coercible (struct type to, struct type from) {
+	if (to.ttype == COMPOUND_TYPE || from.type == COMPOUND_TYPE)
+		return 0;
+	if (is_int_type(to))
+		return 2;
+	if (to.ttype == PTR_TYPE && from.ttype == PTR_TYPE)
+		return 1;
+	return (to == from);
+}
+
 void 
 copy_name (char **buf, char *name) {
   if (!name)

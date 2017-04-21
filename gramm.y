@@ -573,11 +573,12 @@ expr    : primary_expr { $$ = $1; }
           }
         | '(' type_name ')' expr
           {
-            if ($2.ttype == COMPOUND_TYPE) // or array
-              error("conversion to non-scalar type requested");
             if (!is_coercible($2, $4.type))
-              error("non-interconvertible types");
-
+              error("types are not coercible");
+            $$.type = $2.type;
+            $$.val.quad_no = next_quad;
+            $$.ptr = QUAD_PTR;
+            out_gen_quad($4);
           }
         | '*' expr %prec DEREF
           {
@@ -714,6 +715,16 @@ out_assign(char *name, struct expr_type expr) {
   fprintf(outfile, "%s = %s\n", name, s);
 
   if (mf) free(s);
+  return;
+}
+
+void 
+out_gen_quad (struct expr_type e) {
+  char *temp = malloc(10 * sizeof(int));
+  temp_var_name(next_quad++, temp);
+  out_assign(temp, e);
+
+  free(temp);
   return;
 }
 
