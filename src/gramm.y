@@ -465,7 +465,7 @@ type_name : INT
           | ALIAS_NAME { $$ = *$1; }
           ;
 
-opt_init  :  '=' expr   { $$ = $2; }
+opt_init  :  '=' expr   { printf("In opt_init"); $$ = $2; }
           | /* empty */ { $$.type.ttype = UNDEF_TYPE; }
         ;
 
@@ -476,7 +476,7 @@ primary_expr  : CONSTANT  {
                   $$ = create_const_expr(temp);
                 }
               | IDENTIFIER { 
-                  symrec *rec = getsym($1);
+                  symrec *rec = getsym($1, scope);
                   if (!rec) {
                     error("Undefined symbol\n");
                   }
@@ -634,8 +634,9 @@ struct bigop bigops[] = {
 };
 
 int
-main (int argc, char **argv)
+main ()
 {
+  printf("In main");
   /* TODO: Parse args properly */
   outfile = fopen(DEFAULT_OUT, "w+");
   if (!outfile) {

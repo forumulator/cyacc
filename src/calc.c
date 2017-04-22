@@ -129,7 +129,7 @@ getsym (char *sym_name, struct scope_type scope)
 {
   struct list* node;
   symrec *ptr, *ret = NULL;
-  int larg = 0;
+  int larg = -1;
   for (node = sym_table; node; node = node->next) {
     ptr = (symrec *)node->data;
       // Check scoping rules too
