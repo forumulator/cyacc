@@ -1,27 +1,23 @@
 #include <stdbool.h>
-#include "list.h"
+// #include "list.h"
+
+#define _CALC
+
+struct btype_info{
+  char *name;
+  int size;
+};
+
+
+
 
 struct scope_type {
   int level;
   int label;
   int over; // is the scope of this var over
 };
-/* Data type for links in the chain of symbols.      */
-struct symrec
-{
-  char *name;  /* name of symbol                     */
-  struct type type;
-  bool param;
-  struct symrec *next;    /* link field              */
-  struct scope_type scope;
-};
 
-typedef struct symrec symrec;
-
-struct alias_rec {
-  char *name;
-  struct type to;
-};
+struct struct_type;
 
 // `struct type` is passed around by value,
 // not pointers.
@@ -46,6 +42,7 @@ struct array_type{
     int *dimen;
 }; 
 
+
 struct type {
   // Indicates basic types
   int ttype;
@@ -58,9 +55,28 @@ struct type {
   struct array_type array;
 };
 
+/* Data type for links in the chain of symbols.      */
+struct symrec
+{
+  char *name;  /* name of symbol                     */
+  struct type type;
+  bool param;
+  struct scope_type scope;
+};
+
+typedef struct symrec symrec;
+
+struct alias_rec {
+  char *name;
+  struct type to;
+};
+
+
+
+
 struct memb_list {
   char *name;
-  struct type typerec;
+  struct type type;
   struct memb_list *next;
 };
 
@@ -104,22 +120,29 @@ struct quad {
 };
 
 
-
-extern int depth, nabel;
 /* The symbol table: a chain of `struct symrec'.     */
+/* TODO: Change Symtable to struct list * */
 extern struct list *sym_table;
 // Alias table, list of `struct alias_rec'
 extern struct list *aliases;
 // Struct and Unions table, list of `struct struct_type'
 extern struct list *cmpnd_types;
+extern struct btype_info basic_types[];
 
 symrec *putsym ();
 symrec *getsym ();
 void delsym_scope(int depth);
 
-struct struct_type *create_struct(char *name, struct memb_list* elems);
+struct struct_type *create_struct(char *name, struct memb_list* elems, int incompl);
 struct struct_type *get_struct(char *name);
+struct type struct_get_elem (struct struct_type *stype, int oft);
+int struct_calc_offset (struct struct_type *stype, char *name);
 void init_tables();
 
-struct alias_rec *get_alias(char *name);
-struct alias_rec *create_alias(char *name, struct type type);
+struct type *get_alias(char *name);
+void create_alias(char *name, struct type type);
+
+struct memb_list *create_member (char *name, struct memb_list *join);
+
+int size_of (struct type t);
+

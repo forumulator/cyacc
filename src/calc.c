@@ -2,12 +2,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
+#include "gramm.h"
+#include <stdio.h>
 
 // User defined data types 
 struct list *cmpnd_types;
 
 // Aliases info.
 struct list *aliases;
+struct list *sym_table;
+
+struct btype_info
+basic_types[] = {
+  {"void", 0},
+  {"char", 1},
+  {"int", 4},
+  {"float", 4},
+  {"short", 2},
+  {"long", 8}
+};
 
 void
 init_tables () {
@@ -15,15 +28,17 @@ init_tables () {
   cmpnd_types = NULL;
 }
 
+// incompl parameter to differentiate between 
+// empty struct and fwd. declaration
 struct struct_type 
 *create_struct (char *name, struct memb_list* elems, int incompl) { 
-  ss = malloc(sizeof(struct struct_type));
+  struct struct_type *ss = malloc(sizeof(struct struct_type));
   ss->name = name;
-
+  printf("Creating a struct with name %s\n", name);
   int size = 0;
   struct memb_list *node = elems;
   while (node) {
-    size += size_of(node->typerec);
+    size += size_of(node->type);
     node = node->next;
   }
   
@@ -37,19 +52,7 @@ struct struct_type
   }
 
   // Create new node
-  struct *list newnode = malloc(sizeof(struct list));
-  newnode->data = (void *)ss;
-  newnode->next = NULL;
-
-  // Add to current list
-  struct list *n = cmpnd_types;
-  if (cmpnd_types) {
-    while (n->next)
-      n = n->next;
-    n->next = newnode;
-  }                        
-  else
-    cmpnd_types = newnode;
+  list_append_elem(&cmpnd_types, list_create_elem(ss));
   return ss;
 }
 
@@ -57,6 +60,7 @@ struct memb_list *
 create_member (char *name, struct memb_list *join) {
   struct memb_list *this = malloc(sizeof(struct memb_list));
   copy_name(&this->name, name);
+  this->type.ttype = INCOMPL_TYPE;
   this->next = join;
   return this;
 }
@@ -71,7 +75,7 @@ struct struct_type
       return s;
     node = node->next;
   }
-  
+  printf("Struct not found");
   // No match
   return NULL;
 }
@@ -83,7 +87,7 @@ struct_get_elem (struct struct_type *stype, int oft) {
   int count = 1;
   while (node) {
     if (oft == count++)
-      return node->typerec;
+      return node->type;
     node = node->next;
   }
 
@@ -98,7 +102,7 @@ struct_calc_offset (struct struct_type *stype, char *name) {
   while (node) {
     if (!strcmp(node->name, name))
       return offset;
-    offset += size_of(node->typerec);
+    offset += size_of(node->type);
     node = node->next;
   }
 
@@ -106,36 +110,37 @@ struct_calc_offset (struct struct_type *stype, char *name) {
 }
 
 symrec *
-putsym (sym_name, sym_type)
-     char *sym_name;
-     struct type sym_type;
-  {
-    symrec *ptr;
-    ptr = (symrec *) malloc (sizeof (symrec));
-    copy_name(&ptr->name, sym_name);
-    ptr->type = sym_type;
-    // ptr->value.var = 0; /* set value to 0 even if fctn.  */
-    ptr->scope.level = depth;  ptr->scope.label = nlabel;
-    ptr->scope.over = false;
-    list_append_elem(&sym_table, list_create_elem(((void *)ptr)));
-    return ptr;
-  }
+putsym (char * sym_name, struct type sym_type, struct scope_type scope)
+{
+  symrec *ptr;
+  ptr = (symrec *) malloc (sizeof (symrec));
+  copy_name(&ptr->name, sym_name);
+  ptr->type = sym_type;
+  // ptr->value.var = 0; /* set value to 0 even if fctn.  */
+  scope.over = 0;
+  ptr->scope = scope;
+
+  list_append_elem(&sym_table, list_create_elem(((void *)ptr)));
+  return ptr;
+}
 
 symrec *
-getsym (sym_name)
-     char *sym_name;
+getsym (char *sym_name, struct scope_type scope)
 {
   struct list* node;
-  symrec *ptr;
+  symrec *ptr, *ret = NULL;
+  int larg = 0;
   for (node = sym_table; node; node = node->next) {
     ptr = (symrec *)node->data;
       // Check scoping rules too
-    if (!ptr->scope.over && ptr->scope.level <= depth
-        && !strcmp (ptr->name,sym_name))
-      return ptr;
+    if (!ptr->scope.over && ptr->scope.level <= scope.level
+        && scope.level > larg && !strcmp (ptr->name,sym_name)) {
+      ret = ptr;
+      larg = ptr->scope.level;
+    }
   }
   
-  return 0;
+  return ret;
 }
 
 void
@@ -143,7 +148,7 @@ delsym_scope(int depth) {
   struct list *node; symrec *ptr;
   for (node = sym_table; node; node = node->next) {
     ptr = (symrec *)node->data;
-    if (!ptr->scope.over && ptr->scope.depth == depth)
+    if (!ptr->scope.over && ptr->scope.level == depth)
       ptr->scope.over = true;
   }
   return;
@@ -164,21 +169,29 @@ get_alias (char *name) {
   return NULL;
 }
 
+static struct list *
+create_alias_entry(char *name, struct type tar) {
+  struct alias_rec *alias = malloc(sizeof(struct alias_rec));
+  copy_name(&alias->name, name);
+  alias->to = tar;
+  struct list *node = malloc(sizeof(struct list));
+  node->next = NULL;
+  node->data = (void *)alias;
+  return node;
+}
+
 void
-create_alias (struct type t, char *name) {
+create_alias (char *name, struct type t) {
   // Check if identifier 
   // is in the symbol table              
   struct list *node = aliases, *last = aliases;
-  struct alias_rec *alias; int exis_flag = 0;
+  struct alias_rec *alias;
   while (node) {
     last = node;
     node = node->next;
   }
 
-  if (exis_flag)
-    goto done_alias;
-
-  node = create_alias_entry($3, $2);
+  node = create_alias_entry(name, t);
   if (aliases)
     last->next = node;
   else 
@@ -187,14 +200,18 @@ create_alias (struct type t, char *name) {
   return;
 }
 
-struct list *
-create_alias_entry(char *name, struct type tar) {
-  struct alias_rec *alias = malloc(sizeof(struct alias_rec));
-  alias->name = malloc(strlen(name) * sizeof(char));
-  strcpy(alias->name, name);
-  alias->to = tar;
-  struct list *node = malloc(sizeof(struct list));
-  node->next = NULL;
-  node->data = (void *)alias;
-  return node;
-}
+int 
+size_of (struct type t) {
+  int size = 0;
+  if (t.ttype == BASIC_TYPE) 
+    size = basic_types[t.val.btype].size;
+  else if (t.ttype == PTR_TYPE)
+    size = SIZEOFPTR;
+  else if (t.ttype == COMPOUND_TYPE)
+    // Struct or union
+    size = (t.val.stype)->size;
+
+  if (t.array.size >= 0)
+    return size * t.array.size;
+  else return -1;
+} 

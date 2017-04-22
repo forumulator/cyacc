@@ -71,20 +71,22 @@
      ELLIPSIS = 287,
      CASE = 288,
      DEFAULT = 289,
-     IF = 290,
-     ELSE = 291,
-     SWITCH = 292,
-     WHILE = 293,
-     DO = 294,
-     FOR = 295,
-     GOTO = 296,
-     CONTINUE = 297,
-     BREAK = 298,
-     RETURN = 299,
-     SIZEOF = 300,
-     CONSTANT = 301,
-     IDENTIFIER = 302,
-     UMINUS = 303
+     SWITCH = 290,
+     WHILE = 291,
+     DO = 292,
+     FOR = 293,
+     GOTO = 294,
+     CONTINUE = 295,
+     BREAK = 296,
+     RETURN = 297,
+     SIZEOF = 298,
+     CONSTANT = 299,
+     IDENTIFIER = 300,
+     ALIAS_NAME = 301,
+     DEREF = 302,
+     UMINUS = 303,
+     IF = 304,
+     ELSE = 305
    };
 #endif
 
@@ -95,21 +97,34 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 42 ".\\gramm.y"
+#line 40 "gramm.y"
 
 double  val;  /* For returning numbers.                   */  
 char *id_name;
+char *t_name;
 symrec *sym;
+struct {
+  char *name;
+  struct type type;
+} sym_npt; // stands for name and pointer types
+struct {
+  int type;
+  int val;
+} constant;
 struct expr_type e;
-int type;
+struct type type;
 int patch;
 struct pair dual_patch;
 struct loop_type loop;
+int ttype;
+struct memb_list *tlist;
+struct list *l;
+struct type *alias_type;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 113 "y.tab.h"
+#line 128 "gen/y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

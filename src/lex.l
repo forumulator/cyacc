@@ -9,11 +9,15 @@ IS			(u|U|l|L)*
 %{
 #include <stdio.h>
 #include "calc.h"
+#include "utils.h"
 #include "y.tab.h"
+#include "gramm.h"
 #include <stdlib.h>
 #include <string.h>
 
 char id_name[200];
+
+int check_type();
 
 void count();
 %}
@@ -55,11 +59,7 @@ void count();
 "while"			{ count(); return(WHILE); }
 
 {L}({L}|{D})*		{ 
-					  count(); 
-					  int len = strlen(yytext);
-					  // printf("yytext: %s\n", yytext);
-					  strcpy(id_name, yytext);
-					  yylval.id_name = id_name;
+					  count();
 					  return(check_type());
 					}
 
@@ -158,18 +158,16 @@ void count()
 
 int check_type()
 {
-/*
-* pseudo code --- this is what it should check
-*
-*	if (yytext == type_name)
-*		return(TYPE_NAME);
-*
-*	return(IDENTIFIER);
-*/
+	struct type *alias_type;
+	if (alias_type = get_alias(yytext)) {
+		yylval.alias_type = alias_type;
+		return (ALIAS_NAME);
+	}
 
-/*
-*	it actually will only return IDENTIFIER
-*/
+	int len = strlen(yytext);
+	// printf("yytext: %s\n", yytext);
+	strcpy(id_name, yytext);
+	yylval.id_name = id_name;
 
 	return(IDENTIFIER);
 }

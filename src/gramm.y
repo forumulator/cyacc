@@ -5,38 +5,15 @@
 
 %{
 #include <math.h>  /* For math functions, cos(), sin(), etc. */
-#include "calc.h"  /* Contains definition of `symrec'        */
+// #include "calc.h"  /* Contains definition of `symrec'        */
 #include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include "gramm.h"
 
-#define QUAD_PTR 0
-#define SYM_PTR 2
-#define CONST_PTR 1
-#define MAX_NEST_DEPTH 256
-#define MAX_ARRAY_DIMEN 256
-
-#define JUMP_LABEL_NUMBER 0
-#define JUMP_LABEL_NAME 1
-#define JUMP_PATCH 2
-
-#define UNDEF_TYPE
-#define COMPOUND_TYPE 2
-#define BASIC_TYPE 0
-#define INCOMP_TYPE 999
-
-#define CHAR 1
-#define INT 2
-#define FLOAT 3
-
-#define SIZEOFPTR 4
-
-#define is_array(x) ((x).array.n > 0)
-#define is_pointer(x) ((x).ttype == PTR_TYPE)
-#define is_int_type(t) ((t).type == BASIC && 
-                    ((t).val.basic == INT) || ((t).val.basic == CHAR))
-#define SET_NOT_ARRAY(x) x.array.n = 0; x.array.dimen = NULL; x.array.size = 1;
+#define DEFAULT_OUT "int.out"
 
 int vtype;
 FILE *outfile;
@@ -55,23 +32,10 @@ struct bigop {
 
 int BIGOPS_NUM;
 struct list *nested;
-int nlabel = 0;
-int depth = 0;
+struct scope_type scope;
 
 // Builtin type info.
-struct {
-  char *name;
-  int size;
-} 
-basic_types = {
-  {"void", 0},
-  {"char", 1},
-  {"int", 4},
-  {"float", 4},
-  {"short", 2},
-  {"long", 8}
-};
-
+void init_gloabals();
 
 %}
 
@@ -96,6 +60,7 @@ struct loop_type loop;
 int ttype;
 struct memb_list *tlist;
 struct list *l;
+struct type *alias_type;
 }
 
 %token OR_OP AND_OP EQ_OP NE_OP
@@ -111,22 +76,23 @@ struct list *l;
 
 %token <e> CONSTANT        /* Simple double precision number   */
 %token <id_name> IDENTIFIER  /* Variable and Function            */
+%token <alias_type> ALIAS_NAME;
 
 %type <patch> if_clause
 %type <dual_patch> else_clause 
 %type <loop> while_clause
-%type <e> expr primary_expr opt_init function_call
+%type <e> expr primary_expr opt_init // function_call
 %type <type> type_name compound_type
 %type <l> var_dlist var_definition
 %type <sym_npt> symbol_name
-%type <ttyp> type_type
+%type <ttype> type_type
 %type <t_name> opt_typ_name;
-%type <tlist> opt_member_decl_list member_decl_list member_decl
+%type <tlist> opt_member_decl_list member_decl_list member_decl id_list
 %type <e> indexing
 
 // %precedence mult_op
 // %precedence ad_op
-
+%expect 1
 %left ','
 %right '='
 %left OR_OP
@@ -141,13 +107,14 @@ struct list *l;
 %left '*' '/' '%'
 %left DEREF
 %right INC_OP DEC_OP 
+%right ')'
 %right '!' '~'
 %left UMINUS     /* Negation--unary minus */
 %left '.'
 %left '['
 
-%noassoc IF
-%noassoc ELSE
+%nonassoc IF
+%nonassoc ELSE
 
 /* Grammar follows */
 
@@ -156,8 +123,7 @@ struct list *l;
 
 input :   /* empty */
       | input statement
-      | type_definition
-;
+      ;
 
 
 statement     : declaration_statement {}
@@ -168,10 +134,11 @@ statement     : declaration_statement {}
               | iterative_statement {}
               | block_statement {}
               | label_stmt {}
+              | type_definition
         ;
 
 // User defined label
-label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s ", $1); }
+label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s: ", $1); }
           ;
 
 /* TODO: Differentiate between stmts inside 
@@ -181,10 +148,11 @@ block_statement : begin_sub '{' input '}' end_sub
 
 begin_sub :   /* eps */
               {
-                nlabel = label_no;
+                scope.label = label_no;
+                // Push scope info onto stack
                 list_prepend_elem(&nested, 
-                  list_create_elem((void *)nlabel));
-                depth++;
+                  list_create_elem((void *)label_no));
+                scope.level++;
                 out_label();
               }
           ;
@@ -192,9 +160,9 @@ begin_sub :   /* eps */
 end_sub   :   /* eps */
               {
                 list_pop_front(&nested);
-                nlabel = (int) nested->data;
-                delsym_scope(depth);
-                depth--;
+                scope.label = (int) nested->data;
+                delsym_scope(scope.level);
+                scope.level--;
               }
           ;
 
@@ -203,10 +171,12 @@ type_definition : aliasing ';'
                 ;
 
 // Forward declarations of structs ignored for now
-/* TODO: Allow definitions of recursive structs by 
+/* TODO: Allow definitions of recursive structs pointers by 
  * combining the two */
+/* TODO: Check for duplicate members */
 compound_type   : type_type opt_typ_name '{' member_decl_list '}'
-                    {
+                    { 
+                      printf("nam1e %s\n", $2);
                       if (get_struct($2))
                         error("Redefinition of struct");
                       /* TODO: Differentiate b/w STRUCT and
@@ -217,24 +187,31 @@ compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                     }
                 | type_type IDENTIFIER
                   {
+                    printf("name2 %s\n", $2);
+
                     struct struct_type *s = get_struct($2);
-                    if (!s)
+                    if (!s)  {
                       // Forward declaration
                       $$.val.stype = create_struct($2, NULL, true);
-                    $$.ttype = COMPOUND_TYPE;
+                      $$.ttype = INCOMPL_TYPE;                      
+                    }
+                    else {
+                      $$.ttype = COMPOUND_TYPE;
+                      $$.val.stype = s;                    
+                    }
                     SET_NOT_ARRAY($$);
                   }
                 ;
 
-type_type : STRUCT { $$ = STRUCT; } 
-          | UNION  { $$ = UNION; }
+type_type : STRUCT { $$ = STRUCT_TAG; } 
+          | UNION  { $$ = UNION_TAG; }
           ;
 
 opt_typ_name: /* empty */ { $$ = ""; }
             | IDENTIFIER  { copy_name(&$$, $1); }
             ; 
 
-/* Add case when the member list can 
+/* TODO: Add case when the member list can 
 also be empty */
 member_decl_list:  member_decl opt_member_decl_list
               {
@@ -248,6 +225,10 @@ member_decl_list:  member_decl opt_member_decl_list
 
            ;
 
+opt_member_decl_list: /* empty */ { $$ = NULL; }
+                    | member_decl_list { $$ = $1; }
+                    ;
+
 member_decl : type_name id_list ';'
               {
                 // Set types for all members
@@ -255,7 +236,7 @@ member_decl : type_name id_list ';'
                 if (size_of($1) == -1)
                   error("member has incomplete type");
                 while (mem) {
-                  mem->typerec = $1;
+                  mem->type = $1;
                   mem = mem->next; 
                 }
                 $$ = $2;
@@ -276,11 +257,12 @@ aliasing  : TYPEDEF type_name IDENTIFIER
             { 
               struct type *t;
               if (t = get_alias($3))  {
-                if (*t != $1)
-                  error("Conflicting types for typedef")
+                // Check type equivalence properly
+                if (!is_equiv(*t, $2))
+                  error("Conflicting types for typedef");
               }
               else 
-                create_alias($2, $3);
+                create_alias($3, $2);
             }
           ;
 
@@ -292,6 +274,7 @@ expression_statement  :  expr ';'
 
 jump_statement  : CONTINUE ';'
                   { 
+                    printf("%d", cur_loop.label);
                     if (cur_loop.label == -1)
                       error("continue statement not within a loop");
                     out_jmp(NULL, &cur_loop.label, JUMP_LABEL_NUMBER); 
@@ -365,15 +348,15 @@ declaration_statement : type_name var_dlist ';'
                           /* TODO: Check for completeness of 
                             type here */
                           if ($1.ttype == UNDEF_TYPE)
-                            error("incomplete type")
+                            error("incomplete type");
 
                           // Backpatch
                           while (node) {
                             sym = (symrec *) node->data;
                             struct array_type arr = sym->type.array;
-                            if (sym->type.ttype == INCOMP_TYPE) {
-                              if ($1.ttype == INCOMP_TYPE)
-                                error("incomplete array type for varibale");
+                            if (sym->type.ttype == INCOMPL_TYPE) {
+                              if ($1.ttype == INCOMPL_TYPE)
+                                error("incomplete type for varibale");
                               sym->type = $1;
                             }
                             else if (sym->type.ttype == PTR_TYPE) {
@@ -383,11 +366,12 @@ declaration_statement : type_name var_dlist ';'
                                 t = t->val.ptr_to;
                               // Set the type of the last node to the basic
                               // or compound type that is type_name
-                              if (t->ttype == INCOMP_TYPE)
+                              if (t->ttype == INCOMPL_TYPE)
                                 *t = $1;
                             }
-                            sym->type.array.dimen = arr;
-                            sym->type.array.dimen = realloc(sym->table.array, sym->type.array.n);
+                            sym->type.array = arr;
+                            // TODO: Relloc in the entire ptr_to linked list
+                            sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
                             node = node->next;
                           }
                         }
@@ -400,18 +384,18 @@ var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; 
 
 var_definition  : symbol_name opt_init 
                   {
-                    symrec *rec = getsym($1.name);
+                    symrec *rec = getsym($1.name, scope);
                     if (rec) {
                       error("Redefinition of symbol");
                     }
-                    rec = putsym($1.name, $1.type);
+                    rec = putsym($1.name, $1.type, scope);
                     $$ = list_create_elem(rec);            
                     
                     // Assign result of expr to vaiable
                     // This is should be delayed to after the 
                     // type backpatch to check coercibility
                     if ($2.type.ttype != UNDEF_TYPE) {
-                        out_assign($1->name, $2);
+                        out_assign($1.name, $2);
                     }
                     free($1.name);
                   }
@@ -424,14 +408,14 @@ symbol_name : IDENTIFIER
                 copy_name(&$$.name, $1);
                 // Create a new symbol table record
                 // and assign it the thing from the old record  
-                $1.type.ttype = INCOMP_TYPE; 
+                $$.type.ttype = INCOMPL_TYPE; 
                 SET_NOT_ARRAY($$.type);
               }              
             /* TODO: Size decided by initializers */
             | symbol_name '[' CONSTANT ']'
               {
                 struct type *t = &($1.type);
-                if (const_type($3.val.const_str) != INT)
+                if (const_type($3.val.const_str) != INT_TYPE)
                   error("size of array has non-integer type");
                 int size = const_val($3.val.const_str);
                 if (!is_array(*t)) {
@@ -442,7 +426,7 @@ symbol_name : IDENTIFIER
                   t->array.n++;
                 if (t->array.n == MAX_ARRAY_DIMEN)
                   error("Can't have more than 256 dimension array");
-                t->array.dimen[n - 1] = size;
+                t->array.dimen[t->array.n - 1] = size;
                 t->array.size *= size;
                 $$ = $1;
               }
@@ -453,7 +437,7 @@ symbol_name : IDENTIFIER
                 $$.type.ttype = PTR_TYPE;
                 $$.type.val.ptr_to = to;
                 SET_NOT_ARRAY($$.type);
-                $$.name = $1.name;
+                $$.name = $2.name;
               }
             | '(' symbol_name ')' { $$ = $2; }
 
@@ -465,30 +449,24 @@ error messages for empty structs */
 type_name : INT    
             { 
               $$.ttype = BASIC_TYPE;
-              $$.val.basic = INT;
+              $$.val.btype = INT_TYPE;
             }
           | FLOAT
             { 
               $$.ttype = BASIC_TYPE;
-              $$.val.basic = INT;
+              $$.val.btype = FLOAT_TYPE;
             }
           | CHAR
             { 
               $$.ttype = BASIC_TYPE;
-              $$.val.basic = INT;
+              $$.val.btype = CHAR_TYPE;
             }
           | compound_type { $$ = $1; }
-          | IDENTIFIER
-            {
-              struct type *rec = get_alias($1);
-              if (!rec)
-                error("Not a valid type");
-              $$ = *rec;
-            }
+          | ALIAS_NAME { $$ = *$1; }
           ;
 
 opt_init  :  '=' expr   { $$ = $2; }
-          | /* empty */ { $$.type = -1; }
+          | /* empty */ { $$.type.ttype = UNDEF_TYPE; }
         ;
 
 /* TODO: array initializers, struct initializers */
@@ -505,35 +483,35 @@ primary_expr  : CONSTANT  {
                   $$ = create_sym_expr(rec);
                 }
               | '(' expr ')' { $$ = $2; }
-              | function_call
+              // | function_call
               ;
 
-/* function call will be a standard expr type */
-function_call : symbol_name '(' actual_params ')'
-                {
-                  // symrec becomes a union of 
-                  // var_rec and func_rec
-                  // actual parameters is a linked list of 
-                  // expr
+// /* function call will be a standard expr type */
+// function_call : symbol_name '(' actual_params ')'
+//                 {
+//                   // symrec becomes a union of 
+//                   // var_rec and func_rec
+//                   // actual parameters is a linked list of 
+//                   // expr
 
-                  // Compare actual params with formal params
-                  // to see if the types are coercible
-                  // for each one that is, push it onto stack
+//                   // Compare actual params with formal params
+//                   // to see if the types are coercible
+//                   // for each one that is, push it onto stack
 
-                  // goto the label of the function record
+//                   // goto the label of the function record
 
-                  // pop and call special form of gen_quad
-                  // to store the value.
+//                   // pop and call special form of gen_quad
+//                   // to store the value.
 
-                  // finally, the value of function call
-                  // becomes equal to the popped value
-                  $$.type = $1.type; 
-                }
-              ;
+//                   // finally, the value of function call
+//                   // becomes equal to the popped value
+//                   $$.type = $1.type; 
+//                 }
+//               ;
 
-actual_params : expr
-              | actual_params ',' actual_params
-              ;
+// actual_params : expr
+//               | actual_params ',' actual_params
+//               ;
 
 // %right '='
 // %left OR_OP
@@ -581,7 +559,8 @@ expr    : primary_expr { $$ = $1; }
           { 
             struct expr_type e = create_const_expr("1");
             parse_expr(&$$, $2, e, '-');
-            if ($2.type != SYM_PTR) {
+            /* TODO: Think about how pointers behave here */
+            if ($2.ptr != SYM_PTR) {
               error("lvalue required as increment operand");
             }
             out_assign($2.val.sym->name, $$);
@@ -597,12 +576,12 @@ expr    : primary_expr { $$ = $1; }
           }
         | '*' expr %prec DEREF
           {
-            if (!is_array($1.type) || !is_pointer($1.type))
+            if (!is_array($2.type) || !is_pointer($2.type))
               error("Attempting to dereference non-pointer");
             $$.val.quad_no = next_quad;
             $$.ptr = QUAD_PTR;
             $$.type = pointer_deref($2.type);
-            out_deref($1);
+            out_deref($2);
           }
         | expr '*' expr  { parse_expr(&$$, $1, $3, '*'); }
         | expr '/' expr  { parse_expr(&$$, $1, $3, '/'); }
@@ -634,7 +613,7 @@ expr    : primary_expr { $$ = $1; }
 indexing  : '[' expr ']'
             {
               $$ = $2;
-              if ($2.type != INT) // or convertible to int
+              if (!is_int_expr($2)) // or convertible to int
                 error("array subscript is not an integer");
             }
           ;
@@ -654,29 +633,36 @@ struct bigop bigops[] = {
     {DEC_OP, "--"}
 };
 
-void
-main ()
+int
+main (int argc, char **argv)
 {
-  outfile = fopen("int.out", "w+");
+  /* TODO: Parse args properly */
+  outfile = fopen(DEFAULT_OUT, "w+");
   if (!outfile) {
     printf("Error opening output file\n");
     exit(1);
   }
 
-  BIGOPS_NUM = sizeof(bigops);
-  cur_loop.patch = cur_loop.label = -1;
-  next_quad = 0;
-  label_no = 1; patch_idx = 0;
-  int i;
-
+  init_globals();
   init_tables();
-  nested = NULL;
 
+  yyparse ();
+}
+
+void
+init_globals() {
+  int i;
+  BIGOPS_NUM = sizeof(bigops);
+  // Current loop information
+  cur_loop.patch = cur_loop.label = -1;
+  // temporary number
+  next_quad = 0;
+  // label and patch system
+  label_no = 1; patch_idx = 0;
+  nested = NULL;
   for (i = 0; i< MAX_NEST_DEPTH; ++i)
     patches[i] = 0;
-
-  init_table ();
-  yyparse ();
+  scope.level = scope.label = scope.over = 0;
 }
 
 yyerror (s)  /* Called by yyparse on error */
@@ -685,6 +671,7 @@ yyerror (s)  /* Called by yyparse on error */
   printf ("%s\n", s);
 }
 
+void
 error (char *msg) {
   printf("%s\n", msg);
   exit(1);
@@ -696,31 +683,6 @@ struct init
   double (*fnct)();
 };
 
-struct init arith_fncts[]
-  = {
-      "sin", sin,
-      "cos", cos,
-      "atan", atan,
-      "ln", log,
-      "exp", exp,
-      "sqrt", sqrt,
-      0, 0
-    };
-
-/* The symbol table: a chain of `struct symrec'.  */
-symrec *sym_table = (symrec *)0;
-
-void
-init_table ()  /* puts arithmetic functions in table. */
-{
-  int i;
-  symrec *ptr;
-  // for (i = 0; arith_fncts[i].fname != 0; i++)
-  //   {
-  //     ptr = putsym (arith_fncts[i].fname, FNCT);
-  //     ptr->value.fnctptr = arith_fncts[i].fnct;
-  //   }
-}
 
 void
 out_assign(char *name, struct expr_type expr) {
@@ -777,7 +739,7 @@ out_jmp(struct expr_type *e, void *label, int type) {
 
   if (e) {
     cond = malloc(100 * sizeof(char));
-    mf2 = assign_name_to_buf(&name, e);
+    mf2 = assign_name_to_buf(&name, *e);
     printf("Befor cond print\n");
     snprintf(cond, 100, "if ( %s == 0 )\n", name);
     printf(cond);
@@ -821,19 +783,6 @@ void backpatch(int label, int patch) {
   fseek(outfile, cur_pos, SEEK_SET);
   patches[patch] = 0;
   free(ltext);
-}
-
-
-void
-make_label_text (char **buf, int label) {
-    *buf = malloc(101 * sizeof(char));
-    snprintf(*buf, 100, "_L%d", label);    
-}
-
-void 
-make_patch_text (char **buf, int patch) {
-    *buf = malloc(10 * sizeof(char));
-    snprintf(*buf, 10, "$%d     ", patch);  
 }
 
 
@@ -900,54 +849,16 @@ make_quad (struct expr_type e1, struct expr_type e2, int op) {
     return;
 }
 
-int
-assign_name_to_buf(char **buf, struct expr_type e) {
-  int mf = 0;
-  if (e.ptr == CONST_PTR)
-    *buf = e.val.const_str;
-  else if (e.ptr == QUAD_PTR) {
-    mf = 1;
-    *buf = malloc(10 * sizeof(char));
-    temp_var_name(e.val.quad_no, *buf);
-  }
-  else 
-    *buf = (e.val.sym)->name;
-
-  return mf;
-}
-
-void
-temp_var_name(int idx, char *buf) {
-  buf[0] = '_'; buf[1] = 't';
-  snprintf(buf + 2, 7, "%d", idx);
-}
-
-
-int 
-size_of (struct type t) {
-  int size = 0;
-  if (t.ttype == BASIC_TYPE) 
-    size = basic_types[t.val.basic].size;
-  else if (t.ttype == PTR_TYPE)
-    size = SIZEOFPTR;
-  else if (t.ttype == COMPOUND_TYPE)
-    // Struct or union
-    size = (t.val.stype)->size;
-
-  if (t.array.size >= 0)
-    return size * t.array.size;
-  else return -1;
-} 
 
 struct expr_type
 out_member_ref (struct expr_type e, char *mem) {
   struct expr_type ret;
   if (e.type.ttype != COMPOUND_TYPE)
     error("request for member in something not a structure or union");
-  int oft = struct_calc_offset(e.val.stype, mem);
+  int oft = struct_calc_offset(e.type.val.stype, mem);
   if (oft == -1)
     error("struct has no member named this");
-  ret.type = struct_get_elem(e.val.stype, oft);
+  ret.type = struct_get_elem(e.type.val.stype, oft);
   ret.val.quad_no = next_quad;
   ret.ptr = QUAD_PTR;
 
@@ -964,7 +875,7 @@ out_index (struct expr_type e, struct expr_type idx) {
   fprintf(outfile, "%s = %s [%s]\n", tname, name, iname);
 
   if (mf) free(name);
-  if (imf) free(imf);
+  if (imf) free(iname);
 }
 
 void 
@@ -979,7 +890,7 @@ out_const_index (struct expr_type e, const int c) {
 
 void 
 out_deref (struct expr_type e) {
-  if (is_array(e))
+  if (is_array(e.type))
     out_const_index(e, 0); // Index at offset 0
   char *temp, *name; int mf;
   mf = assign_name_to_buf(&name, e);

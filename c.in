@@ -1,5 +1,11 @@
-int a = 2 + 4 * ( (6 + a ) * 2), b = 5;
+
+int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
 int c = a;
+struct abc {
+	int b;
+	int c;
+};
+struct abc def = 2;
 b = !a + 2;
 
 if (a == 5)
@@ -11,7 +17,9 @@ else
 
 b = c;
 
+goto done;
+
 while (a < 10)
 	if (b == 6)
 		break;
-	++a;
+done: ++a;
