@@ -22,6 +22,10 @@ struct bst1 {
 
 int abdf = 2;
 
+int func(int a) {
+	return a + 2;
+}
+
 // struct a{bsfuiohnsfo};
 
 // struct a x;
@@ -57,6 +61,7 @@ int main() {
 	// printf("%d, %x\n", r4.a, r4.b);
 	char *bbb = "dfbji";
 	p[(int)bbb];
+	*(func(2)) = 4;
 	// b = sq(a) + 2; int d= 2;
 	// struct c
 	// typedef int a b;

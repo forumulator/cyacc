@@ -4,10 +4,20 @@ YACC = bison
 LEX = flex
 src = ${CURDIR}/src
 
+SUCC = \033[1;32m
+FAILU = \033[1;31m
+NC = \033[0m
+
+succ_msg = ${SUCC}====================BUILD SUCCESSFULL====================${NC}
+fail_msg = ${FAILU}====================BUILD FAILED====================${NC}
+
 ifeq (,$(findstring _NT,$(OS)))
   ext = 
+  win = False
 else
   ext = .exe
+  evar = lastExitCode
+  win = True
 endif
 
 all: parser lexer compile
@@ -30,13 +40,11 @@ assemble:
 	$(CC) -S -I"$(src)" src/utils.c -o gen/utils.s
 
 cyacc: lexer parser
-	$(CC) -I"$(src)" -o cyacc$(ext) gen/y.tab.c gen/lex.yy.c src/calc.c src/utils.c
+	-$(CC) -I"$(src)" -o cyacc$(ext) gen/y.tab.c gen/lex.yy.c src/calc.c src/utils.c ;\
+	if [ $$? -eq 0 ] ; then echo -e "$(succ_msg)" ; else echo -e "$(fail_msg)"; fi
 
-non2:
-	echo $(CC)
-	echo $(ext)
-	echo $(libs)
-	echo $(outfile)
-	echo $(a)
-	echo $(shell uname)[1:] 
-	echo ${CURDIR}
+
+non3:
+	echo -e ${FAILU} ===failes ${SUCC}
+	echo $$lastExitCode
+	echo NULL

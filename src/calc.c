@@ -33,7 +33,7 @@ init_tables () {
 struct struct_type 
 *create_struct (char *name, struct memb_list* elems, int incompl) { 
   struct struct_type *ss = malloc(sizeof(struct struct_type));
-  ss->name = name;
+  copy_name(&ss->name, name);
   printf("Creating a struct with name %s\n", name);
   int size = 0;
   struct memb_list *node = elems;

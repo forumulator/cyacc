@@ -4,7 +4,6 @@
 /* TODO: SET INDICES and #defines PROPERLY */
 
 %{
-#include <math.h>  /* For math functions, cos(), sin(), etc. */
 // #include "calc.h"  /* Contains definition of `symrec'        */
 #include "utils.h"
 #include <stdio.h>
@@ -35,7 +34,7 @@ struct list *nested;
 struct scope_type scope;
 
 // Builtin type info.
-void init_gloabals();
+void init_globals();
 
 %}
 
@@ -86,7 +85,7 @@ struct type *alias_type;
 %type <l> var_dlist var_definition
 %type <sym_npt> symbol_name
 %type <ttype> type_type
-%type <t_name> opt_typ_name;
+%type <t_name> opt_ctype_name ctype_name;
 %type <tlist> opt_member_decl_list member_decl_list member_decl id_list
 %type <e> indexing
 
@@ -174,7 +173,7 @@ type_definition : aliasing ';'
 /* TODO: Allow definitions of recursive structs pointers by 
  * combining the two */
 /* TODO: Check for duplicate members */
-compound_type   : type_type opt_typ_name '{' member_decl_list '}'
+compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
                     { 
                       printf("nam1e %s\n", $2);
                       if (get_struct($2))
@@ -184,8 +183,11 @@ compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                       $$.val.stype = create_struct($2, $4, false);
                       $$.ttype = COMPOUND_TYPE;
                       SET_NOT_ARRAY($$);
+                      // If it is not null string
+                      if ($2[0])
+                        free($2);
                     }
-                | type_type IDENTIFIER
+                | type_type ctype_name
                   {
                     printf("name2 %s\n", $2);
 
@@ -200,6 +202,7 @@ compound_type   : type_type opt_typ_name '{' member_decl_list '}'
                       $$.val.stype = s;                    
                     }
                     SET_NOT_ARRAY($$);
+                    free($2);
                   }
                 ;
 
@@ -207,8 +210,15 @@ type_type : STRUCT { $$ = STRUCT_TAG; }
           | UNION  { $$ = UNION_TAG; }
           ;
 
-opt_typ_name: /* empty */ { $$ = ""; }
-            | IDENTIFIER  { copy_name(&$$, $1); }
+ctype_name  : IDENTIFIER 
+              {
+                copy_name(&$$, $1);
+                printf("%s\n", $$);
+              }
+            ;
+
+opt_ctype_name: /* empty */ { $$ = ""; }
+            | ctype_name  { $$ = $1; }
             ; 
 
 /* TODO: Add case when the member list can 
