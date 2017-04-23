@@ -4,16 +4,20 @@
 #include <stdlib.h>
 #include "b.h"
 
-int sq(int x) {
-	return x*x;
-}
-
 
 
 struct bst {
 	int a;
 	char *b;
 };
+
+
+void sq (int x) {
+	int a = 4;
+	struct bst t4;
+	// return t4;
+}
+
 
 struct bst1 {
 	int a;
@@ -22,7 +26,7 @@ struct bst1 {
 
 int abdf = 2;
 
-int func(int a) {
+int *func(int a) {
 	return a + 2;
 }
 
@@ -45,13 +49,18 @@ struct k
 
 
 int main() {
-
+	struct bst vf;
+	void atr;
+	int ret = sq(2);
 	printf("%x\n", &abdf);
 
-
-
 	printf("%d %d %d %d\n",&qq.x1,&qq.x2,&qq.x3,&qq.x4);
-
+	int t12 = 2;
+	int a[4];
+	a[5];
+	char r5 = t12; float rf = 3.002;
+	int **d;
+	d[(int)"((int *)2)"];
 	struct ytr *ymr;
 	// ptr();
 	// int  b = a, a = 6;

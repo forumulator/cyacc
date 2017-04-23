@@ -11,7 +11,6 @@ Terminals unused in grammar
    DOUBLE
    CONST
    VOLATILE
-   VOID
    ENUM
    ELLIPSIS
    CASE
@@ -19,11 +18,10 @@ Terminals unused in grammar
    SWITCH
    DO
    FOR
-   RETURN
    SIZEOF
 
 
-State 69 conflicts: 1 shift/reduce
+State 115 conflicts: 1 shift/reduce
 
 
 Grammar
@@ -31,205 +29,245 @@ Grammar
     0 $accept: input $end
 
     1 input: /* empty */
-    2      | input statement
+    2      | input global_statement
 
-    3 statement: declaration_statement
-    4          | jump_statement
-    5          | expression_statement
-    6          | error
-    7          | selection_statement
-    8          | iterative_statement
-    9          | block_statement
-   10          | label_stmt
-   11          | type_definition
+    3 global_statement: declaration_statement
+    4                 | type_definition
+    5                 | function_definition
 
-   12 label_stmt: IDENTIFIER ':'
+    6 body: body_statement body
+    7     | /* empty */
 
-   13 block_statement: begin_sub '{' input '}' end_sub
+    8 body_statement: declaration_statement
+    9               | jump_statement
+   10               | expression_statement
+   11               | error
+   12               | selection_statement
+   13               | iterative_statement
+   14               | block_statement
+   15               | label_stmt
+   16               | return_statement
 
-   14 begin_sub: /* empty */
+   17 label_stmt: IDENTIFIER ':'
 
-   15 end_sub: /* empty */
+   18 return_statement: RETURN expr ';'
+   19                 | RETURN ';'
 
-   16 type_definition: aliasing ';'
-   17                | compound_type ';'
+   20 function_definition: func_head block_statement
 
-   18 compound_type: type_type opt_ctype_name '{' member_decl_list '}'
-   19              | type_type ctype_name
+   21 func_head: res_id begin_params '(' param_decl_list ')' end_params
 
-   20 type_type: STRUCT
-   21          | UNION
+   22 begin_params: /* empty */
 
-   22 ctype_name: IDENTIFIER
+   23 end_params: /* empty */
 
-   23 opt_ctype_name: /* empty */
-   24               | ctype_name
+   24 res_id: type_name IDENTIFIER
 
-   25 member_decl_list: member_decl opt_member_decl_list
+   25 param_decl_list: param_list
+   26                | /* empty */
 
-   26 opt_member_decl_list: /* empty */
-   27                     | member_decl_list
+   27 param_list: param_decl
+   28           | param_decl ',' param_list
 
-   28 member_decl: type_name id_list ';'
+   29 param_decl: type_name symbol_name
 
-   29 id_list: IDENTIFIER
-   30        | IDENTIFIER ',' id_list
+   30 block_statement: begin_sub '{' body '}' end_sub
 
-   31 aliasing: TYPEDEF type_name IDENTIFIER
+   31 begin_sub: /* empty */
 
-   32 expression_statement: expr ';'
-   33                     | ';'
+   32 end_sub: /* empty */
 
-   34 jump_statement: CONTINUE ';'
-   35               | BREAK ';'
-   36               | GOTO IDENTIFIER ';'
+   33 type_definition: aliasing ';'
+   34                | compound_type ';'
 
-   37 iterative_statement: while_loop
+   35 compound_type: type_type opt_ctype_name '{' member_decl_list '}'
+   36              | type_type ctype_name
 
-   38 while_loop: while_clause statement
+   37 type_type: STRUCT
+   38          | UNION
 
-   39 while_clause: WHILE '(' expr ')'
+   39 ctype_name: IDENTIFIER
 
-   40 selection_statement: if_clause statement
-   41                    | if_clause statement else_clause statement
+   40 opt_ctype_name: /* empty */
+   41               | ctype_name
 
-   42 if_clause: IF '(' expr ')'
+   42 member_decl_list: member_decl opt_member_decl_list
 
-   43 else_clause: ELSE
+   43 opt_member_decl_list: /* empty */
+   44                     | member_decl_list
 
-   44 declaration_statement: type_name var_dlist ';'
+   45 member_decl: type_name id_list ';'
 
-   45 var_dlist: var_definition ',' var_dlist
-   46          | var_definition
+   46 id_list: IDENTIFIER
+   47        | IDENTIFIER ',' id_list
 
-   47 var_definition: symbol_name opt_init
+   48 aliasing: TYPEDEF type_name IDENTIFIER
 
-   48 symbol_name: IDENTIFIER
-   49            | symbol_name '[' CONSTANT ']'
-   50            | '*' symbol_name
-   51            | '(' symbol_name ')'
+   49 expression_statement: expr ';'
+   50                     | ';'
 
-   52 type_name: INT
-   53          | FLOAT
-   54          | CHAR
-   55          | compound_type
-   56          | ALIAS_NAME
+   51 jump_statement: CONTINUE ';'
+   52               | BREAK ';'
+   53               | GOTO IDENTIFIER ';'
 
-   57 opt_init: '=' expr
-   58         | /* empty */
+   54 iterative_statement: while_loop
 
-   59 primary_expr: CONSTANT
-   60             | IDENTIFIER
-   61             | '(' expr ')'
+   55 while_loop: while_clause body_statement
 
-   62 expr: primary_expr
-   63     | expr indexing
-   64     | expr '.' IDENTIFIER
-   65     | '!' expr
-   66     | '~' expr
-   67     | '-' expr
-   68     | INC_OP expr
-   69     | DEC_OP expr
-   70     | '(' type_name ')' expr
-   71     | '*' expr
-   72     | expr '*' expr
-   73     | expr '/' expr
-   74     | expr '%' expr
-   75     | expr '+' expr
-   76     | expr '-' expr
-   77     | expr LSHFT_OP expr
-   78     | expr RSHFT_OP expr
-   79     | expr '>' expr
-   80     | expr '<' expr
-   81     | expr LE_OP expr
-   82     | expr GE_OP expr
-   83     | expr EQ_OP expr
-   84     | expr NE_OP expr
-   85     | expr '|' expr
-   86     | expr '^' expr
-   87     | expr '&' expr
-   88     | expr AND_OP expr
-   89     | expr OR_OP expr
-   90     | primary_expr '=' expr
+   56 while_clause: WHILE '(' expr ')'
 
-   91 indexing: '[' expr ']'
+   57 selection_statement: if_clause body_statement
+   58                    | if_clause body_statement else_clause body_statement
+
+   59 if_clause: IF '(' expr ')'
+
+   60 else_clause: ELSE
+
+   61 declaration_statement: type_name var_dlist ';'
+
+   62 var_dlist: var_definition ',' var_dlist
+   63          | var_definition
+
+   64 var_definition: symbol_name opt_init
+
+   65 symbol_name: IDENTIFIER
+   66            | symbol_name '[' CONSTANT ']'
+   67            | '*' symbol_name
+   68            | '(' symbol_name ')'
+
+   69 type_name: INT
+   70          | FLOAT
+   71          | CHAR
+   72          | VOID
+   73          | compound_type
+   74          | ALIAS_NAME
+
+   75 opt_init: '=' expr
+   76         | /* empty */
+
+   77 primary_expr: CONSTANT
+   78             | IDENTIFIER
+   79             | '(' expr ')'
+   80             | function_call
+
+   81 function_call: func_name '(' actual_params_list ')'
+
+   82 func_name: IDENTIFIER
+
+   83 actual_params_list: actual_params
+   84                   | /* empty */
+
+   85 actual_params: expr
+   86              | expr ',' actual_params
+
+   87 expr: primary_expr
+   88     | expr indexing
+   89     | expr '.' IDENTIFIER
+   90     | '!' expr
+   91     | '~' expr
+   92     | '-' expr
+   93     | INC_OP expr
+   94     | DEC_OP expr
+   95     | '(' type_name ')' expr
+   96     | '*' expr
+   97     | expr '*' expr
+   98     | expr '/' expr
+   99     | expr '%' expr
+  100     | expr '+' expr
+  101     | expr '-' expr
+  102     | expr LSHFT_OP expr
+  103     | expr RSHFT_OP expr
+  104     | expr '>' expr
+  105     | expr '<' expr
+  106     | expr LE_OP expr
+  107     | expr GE_OP expr
+  108     | expr EQ_OP expr
+  109     | expr NE_OP expr
+  110     | expr '|' expr
+  111     | expr '^' expr
+  112     | expr '&' expr
+  113     | expr AND_OP expr
+  114     | expr OR_OP expr
+  115     | expr '=' expr
+
+  116 indexing: '[' expr ']'
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
-'!' (33) 65
-'%' (37) 74
-'&' (38) 87
-'(' (40) 39 42 51 61 70
-')' (41) 39 42 51 61 70
-'*' (42) 50 71 72
-'+' (43) 75
-',' (44) 30 45
-'-' (45) 67 76
-'.' (46) 64
-'/' (47) 73
-':' (58) 12
-';' (59) 16 17 28 32 33 34 35 36 44
-'<' (60) 80
-'=' (61) 57 90
-'>' (62) 79
-'[' (91) 49 91
-']' (93) 49 91
-'^' (94) 86
-'{' (123) 13 18
-'|' (124) 85
-'}' (125) 13 18
-'~' (126) 66
-error (256) 6
-OR_OP (258) 89
-AND_OP (259) 88
-EQ_OP (260) 83
-NE_OP (261) 84
-LE_OP (262) 81
-GE_OP (263) 82
-LSHFT_OP (264) 77
-RSHFT_OP (265) 78
-INC_OP (266) 68
-DEC_OP (267) 69
-TYPEDEF (268) 31
+'!' (33) 90
+'%' (37) 99
+'&' (38) 112
+'(' (40) 21 56 59 68 79 81 95
+')' (41) 21 56 59 68 79 81 95
+'*' (42) 67 96 97
+'+' (43) 100
+',' (44) 28 47 62 86
+'-' (45) 92 101
+'.' (46) 89
+'/' (47) 98
+':' (58) 17
+';' (59) 18 19 33 34 45 49 50 51 52 53 61
+'<' (60) 105
+'=' (61) 75 115
+'>' (62) 104
+'[' (91) 66 116
+']' (93) 66 116
+'^' (94) 111
+'{' (123) 30 35
+'|' (124) 110
+'}' (125) 30 35
+'~' (126) 91
+error (256) 11
+OR_OP (258) 114
+AND_OP (259) 113
+EQ_OP (260) 108
+NE_OP (261) 109
+LE_OP (262) 106
+GE_OP (263) 107
+LSHFT_OP (264) 102
+RSHFT_OP (265) 103
+INC_OP (266) 93
+DEC_OP (267) 94
+TYPEDEF (268) 48
 EXTERN (269)
 STATIC (270)
 AUTO (271)
 REGISTER (272)
-CHAR (273) 54
+CHAR (273) 71
 SHORT (274)
-INT (275) 52
+INT (275) 69
 LONG (276)
 SIGNED (277)
 UNSIGNED (278)
-FLOAT (279) 53
+FLOAT (279) 70
 DOUBLE (280)
 CONST (281)
 VOLATILE (282)
-VOID (283)
-STRUCT (284) 20
-UNION (285) 21
+VOID (283) 72
+STRUCT (284) 37
+UNION (285) 38
 ENUM (286)
 ELLIPSIS (287)
 CASE (288)
 DEFAULT (289)
 SWITCH (290)
-WHILE (291) 39
+WHILE (291) 56
 DO (292)
 FOR (293)
-GOTO (294) 36
-CONTINUE (295) 34
-BREAK (296) 35
-RETURN (297)
+GOTO (294) 53
+CONTINUE (295) 51
+BREAK (296) 52
+RETURN (297) 18 19
 SIZEOF (298)
-CONSTANT (299) 49 59
-IDENTIFIER (300) 12 22 29 30 31 36 48 60 64
-ALIAS_NAME (301) 56
+CONSTANT (299) 66 77
+IDENTIFIER (300) 17 24 39 46 47 48 53 65 78 82 89
+ALIAS_NAME (301) 74
 DEREF (302)
 UMINUS (303)
-IF (304) 42
-ELSE (305) 43
+IF (304) 59
+ELSE (305) 60
 
 
 Nonterminals, with rules where they appear
@@ -237,74 +275,104 @@ Nonterminals, with rules where they appear
 $accept (74)
     on left: 0
 input (75)
-    on left: 1 2, on right: 0 2 13
-statement (76)
-    on left: 3 4 5 6 7 8 9 10 11, on right: 2 38 40 41
-label_stmt (77)
-    on left: 12, on right: 10
-block_statement (78)
-    on left: 13, on right: 9
-begin_sub (79)
-    on left: 14, on right: 13
-end_sub (80)
-    on left: 15, on right: 13
-type_definition (81)
-    on left: 16 17, on right: 11
-compound_type (82)
-    on left: 18 19, on right: 17 55
-type_type (83)
-    on left: 20 21, on right: 18 19
-ctype_name (84)
-    on left: 22, on right: 19 24
-opt_ctype_name (85)
-    on left: 23 24, on right: 18
-member_decl_list (86)
-    on left: 25, on right: 18 27
-opt_member_decl_list (87)
-    on left: 26 27, on right: 25
-member_decl (88)
-    on left: 28, on right: 25
-id_list (89)
-    on left: 29 30, on right: 28 30
-aliasing (90)
-    on left: 31, on right: 16
-expression_statement (91)
-    on left: 32 33, on right: 5
-jump_statement (92)
-    on left: 34 35 36, on right: 4
-iterative_statement (93)
-    on left: 37, on right: 8
-while_loop (94)
-    on left: 38, on right: 37
-while_clause (95)
-    on left: 39, on right: 38
-selection_statement (96)
-    on left: 40 41, on right: 7
-if_clause (97)
-    on left: 42, on right: 40 41
-else_clause (98)
-    on left: 43, on right: 41
-declaration_statement (99)
-    on left: 44, on right: 3
-var_dlist (100)
-    on left: 45 46, on right: 44 45
-var_definition (101)
-    on left: 47, on right: 45 46
-symbol_name (102)
-    on left: 48 49 50 51, on right: 47 49 50 51
-type_name (103)
-    on left: 52 53 54 55 56, on right: 28 31 44 70
-opt_init (104)
-    on left: 57 58, on right: 47
-primary_expr (105)
-    on left: 59 60 61, on right: 62 90
-expr (106)
-    on left: 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79
-    80 81 82 83 84 85 86 87 88 89 90, on right: 32 39 42 57 61 63 64
-    65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85
-    86 87 88 89 90 91
-indexing (107)
-    on left: 91, on right: 63
+    on left: 1 2, on right: 0 2
+global_statement (76)
+    on left: 3 4 5, on right: 2
+body (77)
+    on left: 6 7, on right: 6 30
+body_statement (78)
+    on left: 8 9 10 11 12 13 14 15 16, on right: 6 55 57 58
+label_stmt (79)
+    on left: 17, on right: 15
+return_statement (80)
+    on left: 18 19, on right: 16
+function_definition (81)
+    on left: 20, on right: 5
+func_head (82)
+    on left: 21, on right: 20
+begin_params (83)
+    on left: 22, on right: 21
+end_params (84)
+    on left: 23, on right: 21
+res_id (85)
+    on left: 24, on right: 21
+param_decl_list (86)
+    on left: 25 26, on right: 21
+param_list (87)
+    on left: 27 28, on right: 25 28
+param_decl (88)
+    on left: 29, on right: 27 28
+block_statement (89)
+    on left: 30, on right: 14 20
+begin_sub (90)
+    on left: 31, on right: 30
+end_sub (91)
+    on left: 32, on right: 30
+type_definition (92)
+    on left: 33 34, on right: 4
+compound_type (93)
+    on left: 35 36, on right: 34 73
+type_type (94)
+    on left: 37 38, on right: 35 36
+ctype_name (95)
+    on left: 39, on right: 36 41
+opt_ctype_name (96)
+    on left: 40 41, on right: 35
+member_decl_list (97)
+    on left: 42, on right: 35 44
+opt_member_decl_list (98)
+    on left: 43 44, on right: 42
+member_decl (99)
+    on left: 45, on right: 42
+id_list (100)
+    on left: 46 47, on right: 45 47
+aliasing (101)
+    on left: 48, on right: 33
+expression_statement (102)
+    on left: 49 50, on right: 10
+jump_statement (103)
+    on left: 51 52 53, on right: 9
+iterative_statement (104)
+    on left: 54, on right: 13
+while_loop (105)
+    on left: 55, on right: 54
+while_clause (106)
+    on left: 56, on right: 55
+selection_statement (107)
+    on left: 57 58, on right: 12
+if_clause (108)
+    on left: 59, on right: 57 58
+else_clause (109)
+    on left: 60, on right: 58
+declaration_statement (110)
+    on left: 61, on right: 3 8
+var_dlist (111)
+    on left: 62 63, on right: 61 62
+var_definition (112)
+    on left: 64, on right: 62 63
+symbol_name (113)
+    on left: 65 66 67 68, on right: 29 64 66 67 68
+type_name (114)
+    on left: 69 70 71 72 73 74, on right: 24 29 45 48 61 95
+opt_init (115)
+    on left: 75 76, on right: 64
+primary_expr (116)
+    on left: 77 78 79 80, on right: 87
+function_call (117)
+    on left: 81, on right: 80
+func_name (118)
+    on left: 82, on right: 81
+actual_params_list (119)
+    on left: 83 84, on right: 81
+actual_params (120)
+    on left: 85 86, on right: 83 86
+expr (121)
+    on left: 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103
+    104 105 106 107 108 109 110 111 112 113 114 115, on right: 18 49
+    56 59 75 79 85 86 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102
+    103 104 105 106 107 108 109 110 111 112 113 114 115 116
+indexing (122)
+    on left: 116, on right: 88
 
 
 state 0
@@ -319,54 +387,28 @@ state 0
 state 1
 
     0 $accept: input . $end
-    2 input: input . statement
+    2 input: input . global_statement
 
     $end        shift, and go to state 2
-    error       shift, and go to state 3
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    TYPEDEF     shift, and go to state 6
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    WHILE       shift, and go to state 12
-    GOTO        shift, and go to state 13
-    CONTINUE    shift, and go to state 14
-    BREAK       shift, and go to state 15
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 17
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    IF          shift, and go to state 23
-    ';'         shift, and go to state 24
-    '('         shift, and go to state 25
+    TYPEDEF     shift, and go to state 3
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
 
-    '{'  reduce using rule 14 (begin_sub)
-
-    statement              go to state 26
-    label_stmt             go to state 27
-    block_statement        go to state 28
-    begin_sub              go to state 29
-    type_definition        go to state 30
-    compound_type          go to state 31
-    type_type              go to state 32
-    aliasing               go to state 33
-    expression_statement   go to state 34
-    jump_statement         go to state 35
-    iterative_statement    go to state 36
-    while_loop             go to state 37
-    while_clause           go to state 38
-    selection_statement    go to state 39
-    if_clause              go to state 40
-    declaration_statement  go to state 41
-    type_name              go to state 42
-    primary_expr           go to state 43
-    expr                   go to state 44
+    global_statement       go to state 11
+    function_definition    go to state 12
+    func_head              go to state 13
+    res_id                 go to state 14
+    type_definition        go to state 15
+    compound_type          go to state 16
+    type_type              go to state 17
+    aliasing               go to state 18
+    declaration_statement  go to state 19
+    type_name              go to state 20
 
 
 state 2
@@ -378,2792 +420,3387 @@ state 2
 
 state 3
 
-    6 statement: error .
+   48 aliasing: TYPEDEF . type_name IDENTIFIER
 
-    $default  reduce using rule 6 (statement)
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
+
+    compound_type  go to state 21
+    type_type      go to state 17
+    type_name      go to state 22
 
 
 state 4
 
-   68 expr: INC_OP . expr
+   71 type_name: CHAR .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 46
+    $default  reduce using rule 71 (type_name)
 
 
 state 5
 
-   69 expr: DEC_OP . expr
+   69 type_name: INT .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 47
+    $default  reduce using rule 69 (type_name)
 
 
 state 6
 
-   31 aliasing: TYPEDEF . type_name IDENTIFIER
+   70 type_name: FLOAT .
 
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    ALIAS_NAME  shift, and go to state 18
-
-    compound_type  go to state 48
-    type_type      go to state 32
-    type_name      go to state 49
+    $default  reduce using rule 70 (type_name)
 
 
 state 7
 
-   54 type_name: CHAR .
+   72 type_name: VOID .
 
-    $default  reduce using rule 54 (type_name)
+    $default  reduce using rule 72 (type_name)
 
 
 state 8
 
-   52 type_name: INT .
+   37 type_type: STRUCT .
 
-    $default  reduce using rule 52 (type_name)
+    $default  reduce using rule 37 (type_type)
 
 
 state 9
 
-   53 type_name: FLOAT .
+   38 type_type: UNION .
 
-    $default  reduce using rule 53 (type_name)
+    $default  reduce using rule 38 (type_type)
 
 
 state 10
 
-   20 type_type: STRUCT .
+   74 type_name: ALIAS_NAME .
 
-    $default  reduce using rule 20 (type_type)
+    $default  reduce using rule 74 (type_name)
 
 
 state 11
 
-   21 type_type: UNION .
-
-    $default  reduce using rule 21 (type_type)
-
-
-state 12
-
-   39 while_clause: WHILE . '(' expr ')'
-
-    '('  shift, and go to state 50
-
-
-state 13
-
-   36 jump_statement: GOTO . IDENTIFIER ';'
-
-    IDENTIFIER  shift, and go to state 51
-
-
-state 14
-
-   34 jump_statement: CONTINUE . ';'
-
-    ';'  shift, and go to state 52
-
-
-state 15
-
-   35 jump_statement: BREAK . ';'
-
-    ';'  shift, and go to state 53
-
-
-state 16
-
-   59 primary_expr: CONSTANT .
-
-    $default  reduce using rule 59 (primary_expr)
-
-
-state 17
-
-   12 label_stmt: IDENTIFIER . ':'
-   60 primary_expr: IDENTIFIER .
-
-    ':'  shift, and go to state 54
-
-    $default  reduce using rule 60 (primary_expr)
-
-
-state 18
-
-   56 type_name: ALIAS_NAME .
-
-    $default  reduce using rule 56 (type_name)
-
-
-state 19
-
-   67 expr: '-' . expr
-
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 55
-
-
-state 20
-
-   71 expr: '*' . expr
-
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 56
-
-
-state 21
-
-   65 expr: '!' . expr
-
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 57
-
-
-state 22
-
-   66 expr: '~' . expr
-
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 58
-
-
-state 23
-
-   42 if_clause: IF . '(' expr ')'
-
-    '('  shift, and go to state 59
-
-
-state 24
-
-   33 expression_statement: ';' .
-
-    $default  reduce using rule 33 (expression_statement)
-
-
-state 25
-
-   61 primary_expr: '(' . expr ')'
-   70 expr: '(' . type_name ')' expr
-
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    compound_type  go to state 48
-    type_type      go to state 32
-    type_name      go to state 60
-    primary_expr   go to state 43
-    expr           go to state 61
-
-
-state 26
-
-    2 input: input statement .
+    2 input: input global_statement .
 
     $default  reduce using rule 2 (input)
 
 
+state 12
+
+    5 global_statement: function_definition .
+
+    $default  reduce using rule 5 (global_statement)
+
+
+state 13
+
+   20 function_definition: func_head . block_statement
+
+    $default  reduce using rule 31 (begin_sub)
+
+    block_statement  go to state 23
+    begin_sub        go to state 24
+
+
+state 14
+
+   21 func_head: res_id . begin_params '(' param_decl_list ')' end_params
+
+    $default  reduce using rule 22 (begin_params)
+
+    begin_params  go to state 25
+
+
+state 15
+
+    4 global_statement: type_definition .
+
+    $default  reduce using rule 4 (global_statement)
+
+
+state 16
+
+   34 type_definition: compound_type . ';'
+   73 type_name: compound_type .
+
+    ';'  shift, and go to state 26
+
+    $default  reduce using rule 73 (type_name)
+
+
+state 17
+
+   35 compound_type: type_type . opt_ctype_name '{' member_decl_list '}'
+   36              | type_type . ctype_name
+
+    IDENTIFIER  shift, and go to state 27
+
+    $default  reduce using rule 40 (opt_ctype_name)
+
+    ctype_name      go to state 28
+    opt_ctype_name  go to state 29
+
+
+state 18
+
+   33 type_definition: aliasing . ';'
+
+    ';'  shift, and go to state 30
+
+
+state 19
+
+    3 global_statement: declaration_statement .
+
+    $default  reduce using rule 3 (global_statement)
+
+
+state 20
+
+   24 res_id: type_name . IDENTIFIER
+   61 declaration_statement: type_name . var_dlist ';'
+
+    IDENTIFIER  shift, and go to state 31
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
+
+    var_dlist       go to state 34
+    var_definition  go to state 35
+    symbol_name     go to state 36
+
+
+state 21
+
+   73 type_name: compound_type .
+
+    $default  reduce using rule 73 (type_name)
+
+
+state 22
+
+   48 aliasing: TYPEDEF type_name . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 37
+
+
+state 23
+
+   20 function_definition: func_head block_statement .
+
+    $default  reduce using rule 20 (function_definition)
+
+
+state 24
+
+   30 block_statement: begin_sub . '{' body '}' end_sub
+
+    '{'  shift, and go to state 38
+
+
+state 25
+
+   21 func_head: res_id begin_params . '(' param_decl_list ')' end_params
+
+    '('  shift, and go to state 39
+
+
+state 26
+
+   34 type_definition: compound_type ';' .
+
+    $default  reduce using rule 34 (type_definition)
+
+
 state 27
 
-   10 statement: label_stmt .
+   39 ctype_name: IDENTIFIER .
 
-    $default  reduce using rule 10 (statement)
+    $default  reduce using rule 39 (ctype_name)
 
 
 state 28
 
-    9 statement: block_statement .
+   36 compound_type: type_type ctype_name .
+   41 opt_ctype_name: ctype_name .
 
-    $default  reduce using rule 9 (statement)
+    '{'       reduce using rule 41 (opt_ctype_name)
+    $default  reduce using rule 36 (compound_type)
 
 
 state 29
 
-   13 block_statement: begin_sub . '{' input '}' end_sub
+   35 compound_type: type_type opt_ctype_name . '{' member_decl_list '}'
 
-    '{'  shift, and go to state 62
+    '{'  shift, and go to state 40
 
 
 state 30
 
-   11 statement: type_definition .
+   33 type_definition: aliasing ';' .
 
-    $default  reduce using rule 11 (statement)
+    $default  reduce using rule 33 (type_definition)
 
 
 state 31
 
-   17 type_definition: compound_type . ';'
-   55 type_name: compound_type .
+   24 res_id: type_name IDENTIFIER .
+   65 symbol_name: IDENTIFIER .
 
-    ';'  shift, and go to state 63
-
-    $default  reduce using rule 55 (type_name)
+    '('       reduce using rule 24 (res_id)
+    $default  reduce using rule 65 (symbol_name)
 
 
 state 32
 
-   18 compound_type: type_type . opt_ctype_name '{' member_decl_list '}'
-   19              | type_type . ctype_name
+   67 symbol_name: '*' . symbol_name
 
-    IDENTIFIER  shift, and go to state 64
+    IDENTIFIER  shift, and go to state 41
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
 
-    $default  reduce using rule 23 (opt_ctype_name)
-
-    ctype_name      go to state 65
-    opt_ctype_name  go to state 66
+    symbol_name  go to state 42
 
 
 state 33
 
-   16 type_definition: aliasing . ';'
+   68 symbol_name: '(' . symbol_name ')'
 
-    ';'  shift, and go to state 67
+    IDENTIFIER  shift, and go to state 41
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
+
+    symbol_name  go to state 43
 
 
 state 34
 
-    5 statement: expression_statement .
+   61 declaration_statement: type_name var_dlist . ';'
 
-    $default  reduce using rule 5 (statement)
+    ';'  shift, and go to state 44
 
 
 state 35
 
-    4 statement: jump_statement .
+   62 var_dlist: var_definition . ',' var_dlist
+   63          | var_definition .
 
-    $default  reduce using rule 4 (statement)
+    ','  shift, and go to state 45
+
+    $default  reduce using rule 63 (var_dlist)
 
 
 state 36
 
-    8 statement: iterative_statement .
+   64 var_definition: symbol_name . opt_init
+   66 symbol_name: symbol_name . '[' CONSTANT ']'
 
-    $default  reduce using rule 8 (statement)
+    '='  shift, and go to state 46
+    '['  shift, and go to state 47
+
+    $default  reduce using rule 76 (opt_init)
+
+    opt_init  go to state 48
 
 
 state 37
 
-   37 iterative_statement: while_loop .
+   48 aliasing: TYPEDEF type_name IDENTIFIER .
 
-    $default  reduce using rule 37 (iterative_statement)
+    $default  reduce using rule 48 (aliasing)
 
 
 state 38
 
-   38 while_loop: while_clause . statement
+   30 block_statement: begin_sub '{' . body '}' end_sub
 
-    error       shift, and go to state 3
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    TYPEDEF     shift, and go to state 6
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    WHILE       shift, and go to state 12
-    GOTO        shift, and go to state 13
-    CONTINUE    shift, and go to state 14
-    BREAK       shift, and go to state 15
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 17
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    IF          shift, and go to state 23
-    ';'         shift, and go to state 24
-    '('         shift, and go to state 25
+    error       shift, and go to state 49
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    WHILE       shift, and go to state 52
+    GOTO        shift, and go to state 53
+    CONTINUE    shift, and go to state 54
+    BREAK       shift, and go to state 55
+    RETURN      shift, and go to state 56
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 58
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    IF          shift, and go to state 63
+    ';'         shift, and go to state 64
+    '('         shift, and go to state 65
 
-    '{'  reduce using rule 14 (begin_sub)
+    '{'  reduce using rule 31 (begin_sub)
+    '}'  reduce using rule 7 (body)
 
-    statement              go to state 68
-    label_stmt             go to state 27
-    block_statement        go to state 28
-    begin_sub              go to state 29
-    type_definition        go to state 30
-    compound_type          go to state 31
-    type_type              go to state 32
-    aliasing               go to state 33
-    expression_statement   go to state 34
-    jump_statement         go to state 35
-    iterative_statement    go to state 36
-    while_loop             go to state 37
-    while_clause           go to state 38
-    selection_statement    go to state 39
-    if_clause              go to state 40
-    declaration_statement  go to state 41
-    type_name              go to state 42
-    primary_expr           go to state 43
-    expr                   go to state 44
+    body                   go to state 66
+    body_statement         go to state 67
+    label_stmt             go to state 68
+    return_statement       go to state 69
+    block_statement        go to state 70
+    begin_sub              go to state 24
+    compound_type          go to state 21
+    type_type              go to state 17
+    expression_statement   go to state 71
+    jump_statement         go to state 72
+    iterative_statement    go to state 73
+    while_loop             go to state 74
+    while_clause           go to state 75
+    selection_statement    go to state 76
+    if_clause              go to state 77
+    declaration_statement  go to state 78
+    type_name              go to state 79
+    primary_expr           go to state 80
+    function_call          go to state 81
+    func_name              go to state 82
+    expr                   go to state 83
 
 
 state 39
 
-    7 statement: selection_statement .
+   21 func_head: res_id begin_params '(' . param_decl_list ')' end_params
 
-    $default  reduce using rule 7 (statement)
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
+
+    $default  reduce using rule 26 (param_decl_list)
+
+    param_decl_list  go to state 84
+    param_list       go to state 85
+    param_decl       go to state 86
+    compound_type    go to state 21
+    type_type        go to state 17
+    type_name        go to state 87
 
 
 state 40
 
-   40 selection_statement: if_clause . statement
-   41                    | if_clause . statement else_clause statement
+   35 compound_type: type_type opt_ctype_name '{' . member_decl_list '}'
 
-    error       shift, and go to state 3
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    TYPEDEF     shift, and go to state 6
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    WHILE       shift, and go to state 12
-    GOTO        shift, and go to state 13
-    CONTINUE    shift, and go to state 14
-    BREAK       shift, and go to state 15
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 17
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    IF          shift, and go to state 23
-    ';'         shift, and go to state 24
-    '('         shift, and go to state 25
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
 
-    '{'  reduce using rule 14 (begin_sub)
-
-    statement              go to state 69
-    label_stmt             go to state 27
-    block_statement        go to state 28
-    begin_sub              go to state 29
-    type_definition        go to state 30
-    compound_type          go to state 31
-    type_type              go to state 32
-    aliasing               go to state 33
-    expression_statement   go to state 34
-    jump_statement         go to state 35
-    iterative_statement    go to state 36
-    while_loop             go to state 37
-    while_clause           go to state 38
-    selection_statement    go to state 39
-    if_clause              go to state 40
-    declaration_statement  go to state 41
-    type_name              go to state 42
-    primary_expr           go to state 43
-    expr                   go to state 44
+    compound_type     go to state 21
+    type_type         go to state 17
+    member_decl_list  go to state 88
+    member_decl       go to state 89
+    type_name         go to state 90
 
 
 state 41
 
-    3 statement: declaration_statement .
+   65 symbol_name: IDENTIFIER .
 
-    $default  reduce using rule 3 (statement)
+    $default  reduce using rule 65 (symbol_name)
 
 
 state 42
 
-   44 declaration_statement: type_name . var_dlist ';'
+   66 symbol_name: symbol_name . '[' CONSTANT ']'
+   67            | '*' symbol_name .
 
-    IDENTIFIER  shift, and go to state 70
-    '*'         shift, and go to state 71
-    '('         shift, and go to state 72
+    '['  shift, and go to state 47
 
-    var_dlist       go to state 73
-    var_definition  go to state 74
-    symbol_name     go to state 75
+    $default  reduce using rule 67 (symbol_name)
 
 
 state 43
 
-   62 expr: primary_expr .
-   90     | primary_expr . '=' expr
+   66 symbol_name: symbol_name . '[' CONSTANT ']'
+   68            | '(' symbol_name . ')'
 
-    '='  shift, and go to state 76
-
-    $default  reduce using rule 62 (expr)
+    ')'  shift, and go to state 91
+    '['  shift, and go to state 47
 
 
 state 44
 
-   32 expression_statement: expr . ';'
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   61 declaration_statement: type_name var_dlist ';' .
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
-    ';'       shift, and go to state 97
-
-    indexing  go to state 98
+    $default  reduce using rule 61 (declaration_statement)
 
 
 state 45
 
-   60 primary_expr: IDENTIFIER .
+   62 var_dlist: var_definition ',' . var_dlist
 
-    $default  reduce using rule 60 (primary_expr)
+    IDENTIFIER  shift, and go to state 41
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
+
+    var_dlist       go to state 92
+    var_definition  go to state 35
+    symbol_name     go to state 36
 
 
 state 46
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   68     | INC_OP expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   75 opt_init: '=' . expr
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 68 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 94
 
 
 state 47
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   69     | DEC_OP expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   66 symbol_name: symbol_name '[' . CONSTANT ']'
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
-
-    $default  reduce using rule 69 (expr)
-
-    indexing  go to state 98
+    CONSTANT  shift, and go to state 95
 
 
 state 48
 
-   55 type_name: compound_type .
+   64 var_definition: symbol_name opt_init .
 
-    $default  reduce using rule 55 (type_name)
+    $default  reduce using rule 64 (var_definition)
 
 
 state 49
 
-   31 aliasing: TYPEDEF type_name . IDENTIFIER
+   11 body_statement: error .
 
-    IDENTIFIER  shift, and go to state 99
+    $default  reduce using rule 11 (body_statement)
 
 
 state 50
 
-   39 while_clause: WHILE '(' . expr ')'
+   93 expr: INC_OP . expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    primary_expr  go to state 43
-    expr          go to state 100
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 96
 
 
 state 51
 
-   36 jump_statement: GOTO IDENTIFIER . ';'
+   94 expr: DEC_OP . expr
 
-    ';'  shift, and go to state 101
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 97
 
 
 state 52
 
-   34 jump_statement: CONTINUE ';' .
+   56 while_clause: WHILE . '(' expr ')'
 
-    $default  reduce using rule 34 (jump_statement)
+    '('  shift, and go to state 98
 
 
 state 53
 
-   35 jump_statement: BREAK ';' .
+   53 jump_statement: GOTO . IDENTIFIER ';'
 
-    $default  reduce using rule 35 (jump_statement)
+    IDENTIFIER  shift, and go to state 99
 
 
 state 54
 
-   12 label_stmt: IDENTIFIER ':' .
+   51 jump_statement: CONTINUE . ';'
 
-    $default  reduce using rule 12 (label_stmt)
+    ';'  shift, and go to state 100
 
 
 state 55
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   67     | '-' expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   52 jump_statement: BREAK . ';'
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
-
-    $default  reduce using rule 67 (expr)
-
-    indexing  go to state 98
+    ';'  shift, and go to state 101
 
 
 state 56
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   71     | '*' expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   18 return_statement: RETURN . expr ';'
+   19                 | RETURN . ';'
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    ';'         shift, and go to state 102
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 71 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 103
 
 
 state 57
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   65     | '!' expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   77 primary_expr: CONSTANT .
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
-
-    $default  reduce using rule 65 (expr)
-
-    indexing  go to state 98
+    $default  reduce using rule 77 (primary_expr)
 
 
 state 58
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   66     | '~' expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   17 label_stmt: IDENTIFIER . ':'
+   78 primary_expr: IDENTIFIER .
+   82 func_name: IDENTIFIER .
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    ':'  shift, and go to state 104
 
-    $default  reduce using rule 66 (expr)
-
-    indexing  go to state 98
+    '('       reduce using rule 82 (func_name)
+    $default  reduce using rule 78 (primary_expr)
 
 
 state 59
 
-   42 if_clause: IF '(' . expr ')'
+   92 expr: '-' . expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    primary_expr  go to state 43
-    expr          go to state 102
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 105
 
 
 state 60
 
-   70 expr: '(' type_name . ')' expr
+   96 expr: '*' . expr
 
-    ')'  shift, and go to state 103
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 106
 
 
 state 61
 
-   61 primary_expr: '(' expr . ')'
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   90 expr: '!' . expr
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    ')'       shift, and go to state 104
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 107
 
 
 state 62
 
-   13 block_statement: begin_sub '{' . input '}' end_sub
+   91 expr: '~' . expr
 
-    $default  reduce using rule 1 (input)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    input  go to state 105
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 108
 
 
 state 63
 
-   17 type_definition: compound_type ';' .
+   59 if_clause: IF . '(' expr ')'
 
-    $default  reduce using rule 17 (type_definition)
+    '('  shift, and go to state 109
 
 
 state 64
 
-   22 ctype_name: IDENTIFIER .
+   50 expression_statement: ';' .
 
-    $default  reduce using rule 22 (ctype_name)
+    $default  reduce using rule 50 (expression_statement)
 
 
 state 65
 
-   19 compound_type: type_type ctype_name .
-   24 opt_ctype_name: ctype_name .
+   79 primary_expr: '(' . expr ')'
+   95 expr: '(' . type_name ')' expr
 
-    '{'       reduce using rule 24 (opt_ctype_name)
-    $default  reduce using rule 19 (compound_type)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    compound_type  go to state 21
+    type_type      go to state 17
+    type_name      go to state 110
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 111
 
 
 state 66
 
-   18 compound_type: type_type opt_ctype_name . '{' member_decl_list '}'
+   30 block_statement: begin_sub '{' body . '}' end_sub
 
-    '{'  shift, and go to state 106
+    '}'  shift, and go to state 112
 
 
 state 67
 
-   16 type_definition: aliasing ';' .
+    6 body: body_statement . body
 
-    $default  reduce using rule 16 (type_definition)
+    error       shift, and go to state 49
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    WHILE       shift, and go to state 52
+    GOTO        shift, and go to state 53
+    CONTINUE    shift, and go to state 54
+    BREAK       shift, and go to state 55
+    RETURN      shift, and go to state 56
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 58
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    IF          shift, and go to state 63
+    ';'         shift, and go to state 64
+    '('         shift, and go to state 65
+
+    '{'  reduce using rule 31 (begin_sub)
+    '}'  reduce using rule 7 (body)
+
+    body                   go to state 113
+    body_statement         go to state 67
+    label_stmt             go to state 68
+    return_statement       go to state 69
+    block_statement        go to state 70
+    begin_sub              go to state 24
+    compound_type          go to state 21
+    type_type              go to state 17
+    expression_statement   go to state 71
+    jump_statement         go to state 72
+    iterative_statement    go to state 73
+    while_loop             go to state 74
+    while_clause           go to state 75
+    selection_statement    go to state 76
+    if_clause              go to state 77
+    declaration_statement  go to state 78
+    type_name              go to state 79
+    primary_expr           go to state 80
+    function_call          go to state 81
+    func_name              go to state 82
+    expr                   go to state 83
 
 
 state 68
 
-   38 while_loop: while_clause statement .
+   15 body_statement: label_stmt .
 
-    $default  reduce using rule 38 (while_loop)
+    $default  reduce using rule 15 (body_statement)
 
 
 state 69
 
-   40 selection_statement: if_clause statement .
-   41                    | if_clause statement . else_clause statement
+   16 body_statement: return_statement .
 
-    ELSE  shift, and go to state 107
-
-    ELSE      [reduce using rule 40 (selection_statement)]
-    $default  reduce using rule 40 (selection_statement)
-
-    else_clause  go to state 108
+    $default  reduce using rule 16 (body_statement)
 
 
 state 70
 
-   48 symbol_name: IDENTIFIER .
+   14 body_statement: block_statement .
 
-    $default  reduce using rule 48 (symbol_name)
+    $default  reduce using rule 14 (body_statement)
 
 
 state 71
 
-   50 symbol_name: '*' . symbol_name
+   10 body_statement: expression_statement .
 
-    IDENTIFIER  shift, and go to state 70
-    '*'         shift, and go to state 71
-    '('         shift, and go to state 72
-
-    symbol_name  go to state 109
+    $default  reduce using rule 10 (body_statement)
 
 
 state 72
 
-   51 symbol_name: '(' . symbol_name ')'
+    9 body_statement: jump_statement .
 
-    IDENTIFIER  shift, and go to state 70
-    '*'         shift, and go to state 71
-    '('         shift, and go to state 72
-
-    symbol_name  go to state 110
+    $default  reduce using rule 9 (body_statement)
 
 
 state 73
 
-   44 declaration_statement: type_name var_dlist . ';'
+   13 body_statement: iterative_statement .
 
-    ';'  shift, and go to state 111
+    $default  reduce using rule 13 (body_statement)
 
 
 state 74
 
-   45 var_dlist: var_definition . ',' var_dlist
-   46          | var_definition .
+   54 iterative_statement: while_loop .
 
-    ','  shift, and go to state 112
-
-    $default  reduce using rule 46 (var_dlist)
+    $default  reduce using rule 54 (iterative_statement)
 
 
 state 75
 
-   47 var_definition: symbol_name . opt_init
-   49 symbol_name: symbol_name . '[' CONSTANT ']'
+   55 while_loop: while_clause . body_statement
 
-    '='  shift, and go to state 113
-    '['  shift, and go to state 114
+    error       shift, and go to state 49
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    WHILE       shift, and go to state 52
+    GOTO        shift, and go to state 53
+    CONTINUE    shift, and go to state 54
+    BREAK       shift, and go to state 55
+    RETURN      shift, and go to state 56
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 58
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    IF          shift, and go to state 63
+    ';'         shift, and go to state 64
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 58 (opt_init)
+    '{'  reduce using rule 31 (begin_sub)
 
-    opt_init  go to state 115
+    body_statement         go to state 114
+    label_stmt             go to state 68
+    return_statement       go to state 69
+    block_statement        go to state 70
+    begin_sub              go to state 24
+    compound_type          go to state 21
+    type_type              go to state 17
+    expression_statement   go to state 71
+    jump_statement         go to state 72
+    iterative_statement    go to state 73
+    while_loop             go to state 74
+    while_clause           go to state 75
+    selection_statement    go to state 76
+    if_clause              go to state 77
+    declaration_statement  go to state 78
+    type_name              go to state 79
+    primary_expr           go to state 80
+    function_call          go to state 81
+    func_name              go to state 82
+    expr                   go to state 83
 
 
 state 76
 
-   90 expr: primary_expr '=' . expr
+   12 body_statement: selection_statement .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 116
+    $default  reduce using rule 12 (body_statement)
 
 
 state 77
 
-   89 expr: expr OR_OP . expr
+   57 selection_statement: if_clause . body_statement
+   58                    | if_clause . body_statement else_clause body_statement
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    error       shift, and go to state 49
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    WHILE       shift, and go to state 52
+    GOTO        shift, and go to state 53
+    CONTINUE    shift, and go to state 54
+    BREAK       shift, and go to state 55
+    RETURN      shift, and go to state 56
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 58
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    IF          shift, and go to state 63
+    ';'         shift, and go to state 64
+    '('         shift, and go to state 65
 
-    primary_expr  go to state 43
-    expr          go to state 117
+    '{'  reduce using rule 31 (begin_sub)
+
+    body_statement         go to state 115
+    label_stmt             go to state 68
+    return_statement       go to state 69
+    block_statement        go to state 70
+    begin_sub              go to state 24
+    compound_type          go to state 21
+    type_type              go to state 17
+    expression_statement   go to state 71
+    jump_statement         go to state 72
+    iterative_statement    go to state 73
+    while_loop             go to state 74
+    while_clause           go to state 75
+    selection_statement    go to state 76
+    if_clause              go to state 77
+    declaration_statement  go to state 78
+    type_name              go to state 79
+    primary_expr           go to state 80
+    function_call          go to state 81
+    func_name              go to state 82
+    expr                   go to state 83
 
 
 state 78
 
-   88 expr: expr AND_OP . expr
+    8 body_statement: declaration_statement .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 118
+    $default  reduce using rule 8 (body_statement)
 
 
 state 79
 
-   83 expr: expr EQ_OP . expr
+   61 declaration_statement: type_name . var_dlist ';'
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    IDENTIFIER  shift, and go to state 41
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
 
-    primary_expr  go to state 43
-    expr          go to state 119
+    var_dlist       go to state 34
+    var_definition  go to state 35
+    symbol_name     go to state 36
 
 
 state 80
 
-   84 expr: expr NE_OP . expr
+   87 expr: primary_expr .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 120
+    $default  reduce using rule 87 (expr)
 
 
 state 81
 
-   81 expr: expr LE_OP . expr
+   80 primary_expr: function_call .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 121
+    $default  reduce using rule 80 (primary_expr)
 
 
 state 82
 
-   82 expr: expr GE_OP . expr
+   81 function_call: func_name . '(' actual_params_list ')'
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 122
+    '('  shift, and go to state 116
 
 
 state 83
 
-   77 expr: expr LSHFT_OP . expr
+   49 expression_statement: expr . ';'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+    ';'       shift, and go to state 138
 
-    primary_expr  go to state 43
-    expr          go to state 123
+    indexing  go to state 139
 
 
 state 84
 
-   78 expr: expr RSHFT_OP . expr
+   21 func_head: res_id begin_params '(' param_decl_list . ')' end_params
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 124
+    ')'  shift, and go to state 140
 
 
 state 85
 
-   87 expr: expr '&' . expr
+   25 param_decl_list: param_list .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 125
+    $default  reduce using rule 25 (param_decl_list)
 
 
 state 86
 
-   86 expr: expr '^' . expr
+   27 param_list: param_decl .
+   28           | param_decl . ',' param_list
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    ','  shift, and go to state 141
 
-    primary_expr  go to state 43
-    expr          go to state 126
+    $default  reduce using rule 27 (param_list)
 
 
 state 87
 
-   85 expr: expr '|' . expr
+   29 param_decl: type_name . symbol_name
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    IDENTIFIER  shift, and go to state 41
+    '*'         shift, and go to state 32
+    '('         shift, and go to state 33
 
-    primary_expr  go to state 43
-    expr          go to state 127
+    symbol_name  go to state 142
 
 
 state 88
 
-   80 expr: expr '<' . expr
+   35 compound_type: type_type opt_ctype_name '{' member_decl_list . '}'
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 128
+    '}'  shift, and go to state 143
 
 
 state 89
 
-   79 expr: expr '>' . expr
+   42 member_decl_list: member_decl . opt_member_decl_list
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
 
-    primary_expr  go to state 43
-    expr          go to state 129
+    $default  reduce using rule 43 (opt_member_decl_list)
+
+    compound_type         go to state 21
+    type_type             go to state 17
+    member_decl_list      go to state 144
+    opt_member_decl_list  go to state 145
+    member_decl           go to state 89
+    type_name             go to state 90
 
 
 state 90
 
-   76 expr: expr '-' . expr
+   45 member_decl: type_name . id_list ';'
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    IDENTIFIER  shift, and go to state 146
 
-    primary_expr  go to state 43
-    expr          go to state 130
+    id_list  go to state 147
 
 
 state 91
 
-   75 expr: expr '+' . expr
+   68 symbol_name: '(' symbol_name ')' .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 131
+    $default  reduce using rule 68 (symbol_name)
 
 
 state 92
 
-   72 expr: expr '*' . expr
+   62 var_dlist: var_definition ',' var_dlist .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 132
+    $default  reduce using rule 62 (var_dlist)
 
 
 state 93
 
-   73 expr: expr '/' . expr
+   78 primary_expr: IDENTIFIER .
+   82 func_name: IDENTIFIER .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 133
+    '('       reduce using rule 82 (func_name)
+    $default  reduce using rule 78 (primary_expr)
 
 
 state 94
 
-   74 expr: expr '%' . expr
+   75 opt_init: '=' expr .
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
 
-    primary_expr  go to state 43
-    expr          go to state 134
+    $default  reduce using rule 75 (opt_init)
+
+    indexing  go to state 139
 
 
 state 95
 
-   64 expr: expr '.' . IDENTIFIER
+   66 symbol_name: symbol_name '[' CONSTANT . ']'
 
-    IDENTIFIER  shift, and go to state 135
+    ']'  shift, and go to state 148
 
 
 state 96
 
-   91 indexing: '[' . expr ']'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   93     | INC_OP expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
 
-    primary_expr  go to state 43
-    expr          go to state 136
+    $default  reduce using rule 93 (expr)
+
+    indexing  go to state 139
 
 
 state 97
 
-   32 expression_statement: expr ';' .
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   94     | DEC_OP expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    $default  reduce using rule 32 (expression_statement)
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 94 (expr)
+
+    indexing  go to state 139
 
 
 state 98
 
-   63 expr: expr indexing .
+   56 while_clause: WHILE '(' . expr ')'
 
-    $default  reduce using rule 63 (expr)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 149
 
 
 state 99
 
-   31 aliasing: TYPEDEF type_name IDENTIFIER .
+   53 jump_statement: GOTO IDENTIFIER . ';'
 
-    $default  reduce using rule 31 (aliasing)
+    ';'  shift, and go to state 150
 
 
 state 100
 
-   39 while_clause: WHILE '(' expr . ')'
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   51 jump_statement: CONTINUE ';' .
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    ')'       shift, and go to state 137
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
-
-    indexing  go to state 98
+    $default  reduce using rule 51 (jump_statement)
 
 
 state 101
 
-   36 jump_statement: GOTO IDENTIFIER ';' .
+   52 jump_statement: BREAK ';' .
 
-    $default  reduce using rule 36 (jump_statement)
+    $default  reduce using rule 52 (jump_statement)
 
 
 state 102
 
-   42 if_clause: IF '(' expr . ')'
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   19 return_statement: RETURN ';' .
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    ')'       shift, and go to state 138
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
-
-    indexing  go to state 98
+    $default  reduce using rule 19 (return_statement)
 
 
 state 103
 
-   70 expr: '(' type_name ')' . expr
+   18 return_statement: RETURN expr . ';'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+    ';'       shift, and go to state 151
 
-    primary_expr  go to state 43
-    expr          go to state 139
+    indexing  go to state 139
 
 
 state 104
 
-   61 primary_expr: '(' expr ')' .
+   17 label_stmt: IDENTIFIER ':' .
 
-    $default  reduce using rule 61 (primary_expr)
+    $default  reduce using rule 17 (label_stmt)
 
 
 state 105
 
-    2 input: input . statement
-   13 block_statement: begin_sub '{' input . '}' end_sub
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   92     | '-' expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    error       shift, and go to state 3
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    TYPEDEF     shift, and go to state 6
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    WHILE       shift, and go to state 12
-    GOTO        shift, and go to state 13
-    CONTINUE    shift, and go to state 14
-    BREAK       shift, and go to state 15
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 17
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    IF          shift, and go to state 23
-    '}'         shift, and go to state 140
-    ';'         shift, and go to state 24
-    '('         shift, and go to state 25
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
 
-    '{'  reduce using rule 14 (begin_sub)
+    $default  reduce using rule 92 (expr)
 
-    statement              go to state 26
-    label_stmt             go to state 27
-    block_statement        go to state 28
-    begin_sub              go to state 29
-    type_definition        go to state 30
-    compound_type          go to state 31
-    type_type              go to state 32
-    aliasing               go to state 33
-    expression_statement   go to state 34
-    jump_statement         go to state 35
-    iterative_statement    go to state 36
-    while_loop             go to state 37
-    while_clause           go to state 38
-    selection_statement    go to state 39
-    if_clause              go to state 40
-    declaration_statement  go to state 41
-    type_name              go to state 42
-    primary_expr           go to state 43
-    expr                   go to state 44
+    indexing  go to state 139
 
 
 state 106
 
-   18 compound_type: type_type opt_ctype_name '{' . member_decl_list '}'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   96     | '*' expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    ALIAS_NAME  shift, and go to state 18
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
 
-    compound_type     go to state 48
-    type_type         go to state 32
-    member_decl_list  go to state 141
-    member_decl       go to state 142
-    type_name         go to state 143
+    $default  reduce using rule 96 (expr)
+
+    indexing  go to state 139
 
 
 state 107
 
-   43 else_clause: ELSE .
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   90     | '!' expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    $default  reduce using rule 43 (else_clause)
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 90 (expr)
+
+    indexing  go to state 139
 
 
 state 108
 
-   41 selection_statement: if_clause statement else_clause . statement
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   91     | '~' expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    error       shift, and go to state 3
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    TYPEDEF     shift, and go to state 6
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    WHILE       shift, and go to state 12
-    GOTO        shift, and go to state 13
-    CONTINUE    shift, and go to state 14
-    BREAK       shift, and go to state 15
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 17
-    ALIAS_NAME  shift, and go to state 18
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    IF          shift, and go to state 23
-    ';'         shift, and go to state 24
-    '('         shift, and go to state 25
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
 
-    '{'  reduce using rule 14 (begin_sub)
+    $default  reduce using rule 91 (expr)
 
-    statement              go to state 144
-    label_stmt             go to state 27
-    block_statement        go to state 28
-    begin_sub              go to state 29
-    type_definition        go to state 30
-    compound_type          go to state 31
-    type_type              go to state 32
-    aliasing               go to state 33
-    expression_statement   go to state 34
-    jump_statement         go to state 35
-    iterative_statement    go to state 36
-    while_loop             go to state 37
-    while_clause           go to state 38
-    selection_statement    go to state 39
-    if_clause              go to state 40
-    declaration_statement  go to state 41
-    type_name              go to state 42
-    primary_expr           go to state 43
-    expr                   go to state 44
+    indexing  go to state 139
 
 
 state 109
 
-   49 symbol_name: symbol_name . '[' CONSTANT ']'
-   50            | '*' symbol_name .
+   59 if_clause: IF '(' . expr ')'
 
-    '['  shift, and go to state 114
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 50 (symbol_name)
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 152
 
 
 state 110
 
-   49 symbol_name: symbol_name . '[' CONSTANT ']'
-   51            | '(' symbol_name . ')'
+   95 expr: '(' type_name . ')' expr
 
-    ')'  shift, and go to state 145
-    '['  shift, and go to state 114
+    ')'  shift, and go to state 153
 
 
 state 111
 
-   44 declaration_statement: type_name var_dlist ';' .
+   79 primary_expr: '(' expr . ')'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    $default  reduce using rule 44 (declaration_statement)
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    ')'       shift, and go to state 154
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    indexing  go to state 139
 
 
 state 112
 
-   45 var_dlist: var_definition ',' . var_dlist
+   30 block_statement: begin_sub '{' body '}' . end_sub
 
-    IDENTIFIER  shift, and go to state 70
-    '*'         shift, and go to state 71
-    '('         shift, and go to state 72
+    $default  reduce using rule 32 (end_sub)
 
-    var_dlist       go to state 146
-    var_definition  go to state 74
-    symbol_name     go to state 75
+    end_sub  go to state 155
 
 
 state 113
 
-   57 opt_init: '=' . expr
+    6 body: body_statement body .
 
-    INC_OP      shift, and go to state 4
-    DEC_OP      shift, and go to state 5
-    CONSTANT    shift, and go to state 16
-    IDENTIFIER  shift, and go to state 45
-    '-'         shift, and go to state 19
-    '*'         shift, and go to state 20
-    '!'         shift, and go to state 21
-    '~'         shift, and go to state 22
-    '('         shift, and go to state 25
-
-    primary_expr  go to state 43
-    expr          go to state 147
+    $default  reduce using rule 6 (body)
 
 
 state 114
 
-   49 symbol_name: symbol_name '[' . CONSTANT ']'
+   55 while_loop: while_clause body_statement .
 
-    CONSTANT  shift, and go to state 148
+    $default  reduce using rule 55 (while_loop)
 
 
 state 115
 
-   47 var_definition: symbol_name opt_init .
+   57 selection_statement: if_clause body_statement .
+   58                    | if_clause body_statement . else_clause body_statement
 
-    $default  reduce using rule 47 (var_definition)
+    ELSE  shift, and go to state 156
+
+    ELSE      [reduce using rule 57 (selection_statement)]
+    $default  reduce using rule 57 (selection_statement)
+
+    else_clause  go to state 157
 
 
 state 116
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
-   90     | primary_expr '=' expr .
+   81 function_call: func_name '(' . actual_params_list ')'
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 90 (expr)
+    $default  reduce using rule 84 (actual_params_list)
 
-    indexing  go to state 98
+    primary_expr        go to state 80
+    function_call       go to state 81
+    func_name           go to state 82
+    actual_params_list  go to state 158
+    actual_params       go to state 159
+    expr                go to state 160
 
 
 state 117
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
-   89     | expr OR_OP expr .
+  114 expr: expr OR_OP . expr
 
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 89 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 161
 
 
 state 118
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   88     | expr AND_OP expr .
-   89     | expr . OR_OP expr
+  113 expr: expr AND_OP . expr
 
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 88 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 162
 
 
 state 119
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   83     | expr EQ_OP expr .
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  108 expr: expr EQ_OP . expr
 
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 83 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 163
 
 
 state 120
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   84     | expr NE_OP expr .
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  109 expr: expr NE_OP . expr
 
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 84 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 164
 
 
 state 121
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   81     | expr LE_OP expr .
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  106 expr: expr LE_OP . expr
 
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 81 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 165
 
 
 state 122
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   82     | expr GE_OP expr .
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  107 expr: expr GE_OP . expr
 
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 82 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 166
 
 
 state 123
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   77     | expr LSHFT_OP expr .
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  102 expr: expr LSHFT_OP . expr
 
-    '-'  shift, and go to state 90
-    '+'  shift, and go to state 91
-    '*'  shift, and go to state 92
-    '/'  shift, and go to state 93
-    '%'  shift, and go to state 94
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 77 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 167
 
 
 state 124
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   78     | expr RSHFT_OP expr .
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  103 expr: expr RSHFT_OP . expr
 
-    '-'  shift, and go to state 90
-    '+'  shift, and go to state 91
-    '*'  shift, and go to state 92
-    '/'  shift, and go to state 93
-    '%'  shift, and go to state 94
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 78 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 168
 
 
 state 125
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   87     | expr '&' expr .
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  115 expr: expr '=' . expr
 
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 87 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 169
 
 
 state 126
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   86     | expr '^' expr .
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  112 expr: expr '&' . expr
 
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 86 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 170
 
 
 state 127
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   85     | expr '|' expr .
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  111 expr: expr '^' . expr
 
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 85 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 171
 
 
 state 128
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   80     | expr '<' expr .
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  110 expr: expr '|' . expr
 
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 80 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 172
 
 
 state 129
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   79     | expr '>' expr .
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  105 expr: expr '<' . expr
 
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 79 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 173
 
 
 state 130
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   76     | expr '-' expr .
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  104 expr: expr '>' . expr
 
-    '*'  shift, and go to state 92
-    '/'  shift, and go to state 93
-    '%'  shift, and go to state 94
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 76 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 174
 
 
 state 131
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   75     | expr '+' expr .
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  101 expr: expr '-' . expr
 
-    '*'  shift, and go to state 92
-    '/'  shift, and go to state 93
-    '%'  shift, and go to state 94
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 75 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 175
 
 
 state 132
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   72     | expr '*' expr .
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+  100 expr: expr '+' . expr
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 72 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 176
 
 
 state 133
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   73     | expr '/' expr .
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   97 expr: expr '*' . expr
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 73 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 177
 
 
 state 134
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   74     | expr '%' expr .
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   98 expr: expr '/' . expr
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
 
-    $default  reduce using rule 74 (expr)
-
-    indexing  go to state 98
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 178
 
 
 state 135
 
-   64 expr: expr '.' IDENTIFIER .
+   99 expr: expr '%' . expr
 
-    $default  reduce using rule 64 (expr)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 179
 
 
 state 136
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
-   91 indexing: '[' expr . ']'
+   89 expr: expr '.' . IDENTIFIER
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
-    ']'       shift, and go to state 149
-
-    indexing  go to state 98
+    IDENTIFIER  shift, and go to state 180
 
 
 state 137
 
-   39 while_clause: WHILE '(' expr ')' .
+  116 indexing: '[' . expr ']'
 
-    $default  reduce using rule 39 (while_clause)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 181
 
 
 state 138
 
-   42 if_clause: IF '(' expr ')' .
+   49 expression_statement: expr ';' .
 
-    $default  reduce using rule 42 (if_clause)
+    $default  reduce using rule 49 (expression_statement)
 
 
 state 139
 
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   70     | '(' type_name ')' expr .
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   88 expr: expr indexing .
 
-    '.'  shift, and go to state 95
-    '['  shift, and go to state 96
-
-    $default  reduce using rule 70 (expr)
-
-    indexing  go to state 98
+    $default  reduce using rule 88 (expr)
 
 
 state 140
 
-   13 block_statement: begin_sub '{' input '}' . end_sub
+   21 func_head: res_id begin_params '(' param_decl_list ')' . end_params
 
-    $default  reduce using rule 15 (end_sub)
+    $default  reduce using rule 23 (end_params)
 
-    end_sub  go to state 150
+    end_params  go to state 182
 
 
 state 141
 
-   18 compound_type: type_type opt_ctype_name '{' member_decl_list . '}'
+   28 param_list: param_decl ',' . param_list
 
-    '}'  shift, and go to state 151
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    ALIAS_NAME  shift, and go to state 10
+
+    param_list     go to state 183
+    param_decl     go to state 86
+    compound_type  go to state 21
+    type_type      go to state 17
+    type_name      go to state 87
 
 
 state 142
 
-   25 member_decl_list: member_decl . opt_member_decl_list
+   29 param_decl: type_name symbol_name .
+   66 symbol_name: symbol_name . '[' CONSTANT ']'
 
-    CHAR        shift, and go to state 7
-    INT         shift, and go to state 8
-    FLOAT       shift, and go to state 9
-    STRUCT      shift, and go to state 10
-    UNION       shift, and go to state 11
-    ALIAS_NAME  shift, and go to state 18
+    '['  shift, and go to state 47
 
-    $default  reduce using rule 26 (opt_member_decl_list)
-
-    compound_type         go to state 48
-    type_type             go to state 32
-    member_decl_list      go to state 152
-    opt_member_decl_list  go to state 153
-    member_decl           go to state 142
-    type_name             go to state 143
+    $default  reduce using rule 29 (param_decl)
 
 
 state 143
 
-   28 member_decl: type_name . id_list ';'
+   35 compound_type: type_type opt_ctype_name '{' member_decl_list '}' .
 
-    IDENTIFIER  shift, and go to state 154
-
-    id_list  go to state 155
+    $default  reduce using rule 35 (compound_type)
 
 
 state 144
 
-   41 selection_statement: if_clause statement else_clause statement .
+   44 opt_member_decl_list: member_decl_list .
 
-    $default  reduce using rule 41 (selection_statement)
+    $default  reduce using rule 44 (opt_member_decl_list)
 
 
 state 145
 
-   51 symbol_name: '(' symbol_name ')' .
+   42 member_decl_list: member_decl opt_member_decl_list .
 
-    $default  reduce using rule 51 (symbol_name)
+    $default  reduce using rule 42 (member_decl_list)
 
 
 state 146
 
-   45 var_dlist: var_definition ',' var_dlist .
+   46 id_list: IDENTIFIER .
+   47        | IDENTIFIER . ',' id_list
 
-    $default  reduce using rule 45 (var_dlist)
+    ','  shift, and go to state 184
+
+    $default  reduce using rule 46 (id_list)
 
 
 state 147
 
-   57 opt_init: '=' expr .
-   63 expr: expr . indexing
-   64     | expr . '.' IDENTIFIER
-   72     | expr . '*' expr
-   73     | expr . '/' expr
-   74     | expr . '%' expr
-   75     | expr . '+' expr
-   76     | expr . '-' expr
-   77     | expr . LSHFT_OP expr
-   78     | expr . RSHFT_OP expr
-   79     | expr . '>' expr
-   80     | expr . '<' expr
-   81     | expr . LE_OP expr
-   82     | expr . GE_OP expr
-   83     | expr . EQ_OP expr
-   84     | expr . NE_OP expr
-   85     | expr . '|' expr
-   86     | expr . '^' expr
-   87     | expr . '&' expr
-   88     | expr . AND_OP expr
-   89     | expr . OR_OP expr
+   45 member_decl: type_name id_list . ';'
 
-    OR_OP     shift, and go to state 77
-    AND_OP    shift, and go to state 78
-    EQ_OP     shift, and go to state 79
-    NE_OP     shift, and go to state 80
-    LE_OP     shift, and go to state 81
-    GE_OP     shift, and go to state 82
-    LSHFT_OP  shift, and go to state 83
-    RSHFT_OP  shift, and go to state 84
-    '&'       shift, and go to state 85
-    '^'       shift, and go to state 86
-    '|'       shift, and go to state 87
-    '<'       shift, and go to state 88
-    '>'       shift, and go to state 89
-    '-'       shift, and go to state 90
-    '+'       shift, and go to state 91
-    '*'       shift, and go to state 92
-    '/'       shift, and go to state 93
-    '%'       shift, and go to state 94
-    '.'       shift, and go to state 95
-    '['       shift, and go to state 96
-
-    $default  reduce using rule 57 (opt_init)
-
-    indexing  go to state 98
+    ';'  shift, and go to state 185
 
 
 state 148
 
-   49 symbol_name: symbol_name '[' CONSTANT . ']'
+   66 symbol_name: symbol_name '[' CONSTANT ']' .
 
-    ']'  shift, and go to state 156
+    $default  reduce using rule 66 (symbol_name)
 
 
 state 149
 
-   91 indexing: '[' expr ']' .
+   56 while_clause: WHILE '(' expr . ')'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    $default  reduce using rule 91 (indexing)
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    ')'       shift, and go to state 186
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    indexing  go to state 139
 
 
 state 150
 
-   13 block_statement: begin_sub '{' input '}' end_sub .
+   53 jump_statement: GOTO IDENTIFIER ';' .
 
-    $default  reduce using rule 13 (block_statement)
+    $default  reduce using rule 53 (jump_statement)
 
 
 state 151
 
-   18 compound_type: type_type opt_ctype_name '{' member_decl_list '}' .
+   18 return_statement: RETURN expr ';' .
 
-    $default  reduce using rule 18 (compound_type)
+    $default  reduce using rule 18 (return_statement)
 
 
 state 152
 
-   27 opt_member_decl_list: member_decl_list .
+   59 if_clause: IF '(' expr . ')'
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
 
-    $default  reduce using rule 27 (opt_member_decl_list)
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    ')'       shift, and go to state 187
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    indexing  go to state 139
 
 
 state 153
 
-   25 member_decl_list: member_decl opt_member_decl_list .
+   95 expr: '(' type_name ')' . expr
 
-    $default  reduce using rule 25 (member_decl_list)
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    expr           go to state 188
 
 
 state 154
 
-   29 id_list: IDENTIFIER .
-   30        | IDENTIFIER . ',' id_list
+   79 primary_expr: '(' expr ')' .
 
-    ','  shift, and go to state 157
-
-    $default  reduce using rule 29 (id_list)
+    $default  reduce using rule 79 (primary_expr)
 
 
 state 155
 
-   28 member_decl: type_name id_list . ';'
+   30 block_statement: begin_sub '{' body '}' end_sub .
 
-    ';'  shift, and go to state 158
+    $default  reduce using rule 30 (block_statement)
 
 
 state 156
 
-   49 symbol_name: symbol_name '[' CONSTANT ']' .
+   60 else_clause: ELSE .
 
-    $default  reduce using rule 49 (symbol_name)
+    $default  reduce using rule 60 (else_clause)
 
 
 state 157
 
-   30 id_list: IDENTIFIER ',' . id_list
+   58 selection_statement: if_clause body_statement else_clause . body_statement
 
-    IDENTIFIER  shift, and go to state 154
+    error       shift, and go to state 49
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CHAR        shift, and go to state 4
+    INT         shift, and go to state 5
+    FLOAT       shift, and go to state 6
+    VOID        shift, and go to state 7
+    STRUCT      shift, and go to state 8
+    UNION       shift, and go to state 9
+    WHILE       shift, and go to state 52
+    GOTO        shift, and go to state 53
+    CONTINUE    shift, and go to state 54
+    BREAK       shift, and go to state 55
+    RETURN      shift, and go to state 56
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 58
+    ALIAS_NAME  shift, and go to state 10
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    IF          shift, and go to state 63
+    ';'         shift, and go to state 64
+    '('         shift, and go to state 65
 
-    id_list  go to state 159
+    '{'  reduce using rule 31 (begin_sub)
+
+    body_statement         go to state 189
+    label_stmt             go to state 68
+    return_statement       go to state 69
+    block_statement        go to state 70
+    begin_sub              go to state 24
+    compound_type          go to state 21
+    type_type              go to state 17
+    expression_statement   go to state 71
+    jump_statement         go to state 72
+    iterative_statement    go to state 73
+    while_loop             go to state 74
+    while_clause           go to state 75
+    selection_statement    go to state 76
+    if_clause              go to state 77
+    declaration_statement  go to state 78
+    type_name              go to state 79
+    primary_expr           go to state 80
+    function_call          go to state 81
+    func_name              go to state 82
+    expr                   go to state 83
 
 
 state 158
 
-   28 member_decl: type_name id_list ';' .
+   81 function_call: func_name '(' actual_params_list . ')'
 
-    $default  reduce using rule 28 (member_decl)
+    ')'  shift, and go to state 190
 
 
 state 159
 
-   30 id_list: IDENTIFIER ',' id_list .
+   83 actual_params_list: actual_params .
 
-    $default  reduce using rule 30 (id_list)
+    $default  reduce using rule 83 (actual_params_list)
+
+
+state 160
+
+   85 actual_params: expr .
+   86              | expr . ',' actual_params
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    ','       shift, and go to state 191
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 85 (actual_params)
+
+    indexing  go to state 139
+
+
+state 161
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  114     | expr OR_OP expr .
+  115     | expr . '=' expr
+
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 114 (expr)
+
+    indexing  go to state 139
+
+
+state 162
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  113     | expr AND_OP expr .
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 113 (expr)
+
+    indexing  go to state 139
+
+
+state 163
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  108     | expr EQ_OP expr .
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 108 (expr)
+
+    indexing  go to state 139
+
+
+state 164
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  109     | expr NE_OP expr .
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 109 (expr)
+
+    indexing  go to state 139
+
+
+state 165
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  106     | expr LE_OP expr .
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 106 (expr)
+
+    indexing  go to state 139
+
+
+state 166
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  107     | expr GE_OP expr .
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 107 (expr)
+
+    indexing  go to state 139
+
+
+state 167
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  102     | expr LSHFT_OP expr .
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '-'  shift, and go to state 131
+    '+'  shift, and go to state 132
+    '*'  shift, and go to state 133
+    '/'  shift, and go to state 134
+    '%'  shift, and go to state 135
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 102 (expr)
+
+    indexing  go to state 139
+
+
+state 168
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  103     | expr RSHFT_OP expr .
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '-'  shift, and go to state 131
+    '+'  shift, and go to state 132
+    '*'  shift, and go to state 133
+    '/'  shift, and go to state 134
+    '%'  shift, and go to state 135
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 103 (expr)
+
+    indexing  go to state 139
+
+
+state 169
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+  115     | expr '=' expr .
+
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 115 (expr)
+
+    indexing  go to state 139
+
+
+state 170
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  112     | expr '&' expr .
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 112 (expr)
+
+    indexing  go to state 139
+
+
+state 171
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  111     | expr '^' expr .
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 111 (expr)
+
+    indexing  go to state 139
+
+
+state 172
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  110     | expr '|' expr .
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 110 (expr)
+
+    indexing  go to state 139
+
+
+state 173
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  105     | expr '<' expr .
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 105 (expr)
+
+    indexing  go to state 139
+
+
+state 174
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  104     | expr '>' expr .
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+
+    $default  reduce using rule 104 (expr)
+
+    indexing  go to state 139
+
+
+state 175
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  101     | expr '-' expr .
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '*'  shift, and go to state 133
+    '/'  shift, and go to state 134
+    '%'  shift, and go to state 135
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 101 (expr)
+
+    indexing  go to state 139
+
+
+state 176
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  100     | expr '+' expr .
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '*'  shift, and go to state 133
+    '/'  shift, and go to state 134
+    '%'  shift, and go to state 135
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 100 (expr)
+
+    indexing  go to state 139
+
+
+state 177
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   97     | expr '*' expr .
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 97 (expr)
+
+    indexing  go to state 139
+
+
+state 178
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   98     | expr '/' expr .
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 98 (expr)
+
+    indexing  go to state 139
+
+
+state 179
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+   99     | expr '%' expr .
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 99 (expr)
+
+    indexing  go to state 139
+
+
+state 180
+
+   89 expr: expr '.' IDENTIFIER .
+
+    $default  reduce using rule 89 (expr)
+
+
+state 181
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+  116 indexing: '[' expr . ']'
+
+    OR_OP     shift, and go to state 117
+    AND_OP    shift, and go to state 118
+    EQ_OP     shift, and go to state 119
+    NE_OP     shift, and go to state 120
+    LE_OP     shift, and go to state 121
+    GE_OP     shift, and go to state 122
+    LSHFT_OP  shift, and go to state 123
+    RSHFT_OP  shift, and go to state 124
+    '='       shift, and go to state 125
+    '&'       shift, and go to state 126
+    '^'       shift, and go to state 127
+    '|'       shift, and go to state 128
+    '<'       shift, and go to state 129
+    '>'       shift, and go to state 130
+    '-'       shift, and go to state 131
+    '+'       shift, and go to state 132
+    '*'       shift, and go to state 133
+    '/'       shift, and go to state 134
+    '%'       shift, and go to state 135
+    '.'       shift, and go to state 136
+    '['       shift, and go to state 137
+    ']'       shift, and go to state 192
+
+    indexing  go to state 139
+
+
+state 182
+
+   21 func_head: res_id begin_params '(' param_decl_list ')' end_params .
+
+    $default  reduce using rule 21 (func_head)
+
+
+state 183
+
+   28 param_list: param_decl ',' param_list .
+
+    $default  reduce using rule 28 (param_list)
+
+
+state 184
+
+   47 id_list: IDENTIFIER ',' . id_list
+
+    IDENTIFIER  shift, and go to state 146
+
+    id_list  go to state 193
+
+
+state 185
+
+   45 member_decl: type_name id_list ';' .
+
+    $default  reduce using rule 45 (member_decl)
+
+
+state 186
+
+   56 while_clause: WHILE '(' expr ')' .
+
+    $default  reduce using rule 56 (while_clause)
+
+
+state 187
+
+   59 if_clause: IF '(' expr ')' .
+
+    $default  reduce using rule 59 (if_clause)
+
+
+state 188
+
+   88 expr: expr . indexing
+   89     | expr . '.' IDENTIFIER
+   95     | '(' type_name ')' expr .
+   97     | expr . '*' expr
+   98     | expr . '/' expr
+   99     | expr . '%' expr
+  100     | expr . '+' expr
+  101     | expr . '-' expr
+  102     | expr . LSHFT_OP expr
+  103     | expr . RSHFT_OP expr
+  104     | expr . '>' expr
+  105     | expr . '<' expr
+  106     | expr . LE_OP expr
+  107     | expr . GE_OP expr
+  108     | expr . EQ_OP expr
+  109     | expr . NE_OP expr
+  110     | expr . '|' expr
+  111     | expr . '^' expr
+  112     | expr . '&' expr
+  113     | expr . AND_OP expr
+  114     | expr . OR_OP expr
+  115     | expr . '=' expr
+
+    '.'  shift, and go to state 136
+    '['  shift, and go to state 137
+
+    $default  reduce using rule 95 (expr)
+
+    indexing  go to state 139
+
+
+state 189
+
+   58 selection_statement: if_clause body_statement else_clause body_statement .
+
+    $default  reduce using rule 58 (selection_statement)
+
+
+state 190
+
+   81 function_call: func_name '(' actual_params_list ')' .
+
+    $default  reduce using rule 81 (function_call)
+
+
+state 191
+
+   86 actual_params: expr ',' . actual_params
+
+    INC_OP      shift, and go to state 50
+    DEC_OP      shift, and go to state 51
+    CONSTANT    shift, and go to state 57
+    IDENTIFIER  shift, and go to state 93
+    '-'         shift, and go to state 59
+    '*'         shift, and go to state 60
+    '!'         shift, and go to state 61
+    '~'         shift, and go to state 62
+    '('         shift, and go to state 65
+
+    primary_expr   go to state 80
+    function_call  go to state 81
+    func_name      go to state 82
+    actual_params  go to state 194
+    expr           go to state 160
+
+
+state 192
+
+  116 indexing: '[' expr ']' .
+
+    $default  reduce using rule 116 (indexing)
+
+
+state 193
+
+   47 id_list: IDENTIFIER ',' id_list .
+
+    $default  reduce using rule 47 (id_list)
+
+
+state 194
+
+   86 actual_params: expr ',' actual_params .
+
+    $default  reduce using rule 86 (actual_params)

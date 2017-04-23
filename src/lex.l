@@ -10,6 +10,7 @@ IS			(u|U|l|L)*
 #include <stdio.h>
 #include "calc.h"
 #include "utils.h"
+#include "func.h"
 #include "y.tab.h"
 #include "gramm.h"
 #include <stdlib.h>

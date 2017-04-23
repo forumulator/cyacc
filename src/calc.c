@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "utils.h"
+#include "func.h"
 #include "gramm.h"
 #include <stdio.h>
 
@@ -10,7 +11,7 @@ struct list *cmpnd_types;
 
 // Aliases info.
 struct list *aliases;
-struct list *sym_table;
+struct list *global_sym_table;
 
 struct btype_info
 basic_types[] = {
@@ -26,6 +27,14 @@ void
 init_tables () {
   aliases = NULL;
   cmpnd_types = NULL;
+  func_table = NULL;
+  global_sym_table = NULL;
+  int i = 0;
+  for (i = 0; i < 6; ++i) {
+    basic_types[i].t.ttype = BASIC_TYPE;
+    basic_types[i].t.val.btype = i;
+    SET_NOT_ARRAY(basic_types[i].t);
+  }
 }
 
 // incompl parameter to differentiate between 
@@ -110,8 +119,15 @@ struct_calc_offset (struct struct_type *stype, char *name) {
 }
 
 symrec *
-putsym (char * sym_name, struct type sym_type, struct scope_type scope)
+putsym (struct func_rec *active_func, char *sym_name, 
+    struct type sym_type, struct scope_type scope)
 {
+  struct list *sym_table;
+  if (active_func)
+    sym_table = active_func->sym_table;
+  else
+    sym_table = global_sym_table;
+
   symrec *ptr;
   ptr = (symrec *) malloc (sizeof (symrec));
   copy_name(&ptr->name, sym_name);
@@ -125,28 +141,44 @@ putsym (char * sym_name, struct type sym_type, struct scope_type scope)
 }
 
 symrec *
-getsym (char *sym_name, struct scope_type scope)
+getsym (struct func_rec *active_func, 
+    char *sym_name, struct scope_type scope)
 {
+  struct list *sym_table;
   struct list* node;
   symrec *ptr, *ret = NULL;
-  int larg = -1;
+  if (active_func) {
+    sym_table = active_func->sym_table;
+    int larg = -1;
+    for (node = sym_table; node; node = node->next) {
+      ptr = (symrec *)node->data;
+        // Check scoping rules too
+      if (!ptr->scope.over && ptr->scope.level <= scope.level
+          && scope.level > larg && !strcmp (ptr->name,sym_name)) {
+        ret = ptr;
+        larg = ptr->scope.level;
+      }
+    }
+  }  
+  if (ret)
+    return ret;
+
+  sym_table = global_sym_table;
   for (node = sym_table; node; node = node->next) {
     ptr = (symrec *)node->data;
       // Check scoping rules too
-    if (!ptr->scope.over && ptr->scope.level <= scope.level
-        && scope.level > larg && !strcmp (ptr->name,sym_name)) {
-      ret = ptr;
-      larg = ptr->scope.level;
-    }
+    if (!strcmp (ptr->name, sym_name))
+      return ret;
   }
   
-  return ret;
+  return NULL;
+
 }
 
 void
 delsym_scope(int depth) {
   struct list *node; symrec *ptr;
-  for (node = sym_table; node; node = node->next) {
+  for (node = global_sym_table; node; node = node->next) {
     ptr = (symrec *)node->data;
     if (!ptr->scope.over && ptr->scope.level == depth)
       ptr->scope.over = true;
@@ -202,7 +234,15 @@ create_alias (char *name, struct type t) {
 
 int 
 size_of (struct type t) {
-  int size = 0;
+  return t.array.size * base_size_of(t);
+  // if (t.array.size >= 0)
+  //   return size * t.array.size;
+  // else return -1;
+} 
+
+int
+base_size_of (struct type t) {
+  int size;
   if (t.ttype == BASIC_TYPE) 
     size = basic_types[t.val.btype].size;
   else if (t.ttype == PTR_TYPE)
@@ -210,8 +250,5 @@ size_of (struct type t) {
   else if (t.ttype == COMPOUND_TYPE)
     // Struct or union
     size = (t.val.stype)->size;
-
-  if (t.array.size >= 0)
-    return size * t.array.size;
-  else return -1;
-} 
+  return size;
+}

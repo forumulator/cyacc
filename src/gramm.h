@@ -26,6 +26,8 @@
 #define STRUCT_TAG 11
 #define UNION_TAG 12
 
+#define MAX_INT_SIZE 30
+#define MAX_IDENTIFIER_SIZE 30
 // #define CHAR 1
 // #define INT 2
 // #define FLOAT 3
@@ -34,7 +36,8 @@
 
 #define is_array(x) ((x).array.n > 0)
 #define is_pointer(x) ((x).ttype == PTR_TYPE)
-#define is_int_type(t) ((t).ttype == BASIC_TYPE && (t).val.btype == INT_TYPE || (t).val.btype == CHAR_TYPE)
+#define is_int_type(t) ((t).ttype == BASIC_TYPE && ((t).val.btype == INT_TYPE || (t).val.btype == CHAR_TYPE))
+#define is_void_type(t) ((t).ttype == BASIC_TYPE && (t).val.btype == VOID_TYPE)
 #define is_int_expr(e) (is_int_type(e.type))
 
 
@@ -47,7 +50,7 @@ void out_label();
 int out_jmp(struct expr_type *e, void *label, int type);
 void backpatch(int label, int patch);
 void out_assign(char *name, struct expr_type expr);
-void out_index (struct expr_type e, struct expr_type idx);
+void out_index (struct expr_type e);
 struct expr_type out_member_ref (struct expr_type e, char *mem);
 void parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op);
@@ -60,5 +63,18 @@ void make_quad (struct expr_type e1, struct expr_type e2, int op);
 void make_two_quad (struct expr_type e1, int op);
 
 void out_gen_quad (struct expr_type e);
+
+struct expr_type get_vector_elem (struct expr_type e);
+struct expr_type compound_indexing (struct expr_type e, struct expr_type idx);
+struct expr_type parse_indexed_expr (struct expr_type e, struct expr_type idx);
+int sout_expr_with_deref (char *buf, struct expr_type e);
+void out_assign_expr (struct expr_type lval, struct expr_type rval);
+void parse_assignment (struct expr_type lval, struct expr_type rval);
+
+void out_begin_func ();
+void out_end_func ();
+void out_return (struct expr_type *e);
+void out_param (struct expr_type e);
+void out_call (struct func_rec *f);
 
 void error (char *msg);

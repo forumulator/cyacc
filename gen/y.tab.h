@@ -97,7 +97,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 41 "src/gramm.y"
+#line 44 "src/gramm.y"
 
 double  val;  /* For returning numbers.                   */  
 char *id_name;

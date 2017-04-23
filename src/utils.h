@@ -2,6 +2,7 @@
 #include "calc.h"
 #endif
 
+#define _UTILS
 
 // NEVER make a list with automatic 
 // node variables, always malloc
@@ -25,6 +26,7 @@ int is_coercible (struct type to, struct type from);
 struct type pointer_deref (struct type t);
 struct type arr_reduce_dimen (struct type t);
 
+int is_assignable (struct expr_type e);
 int is_equiv(struct type t1, struct type t2);
 
 struct expr_type create_sym_expr (symrec *sym);
@@ -36,3 +38,6 @@ void make_patch_text (char **buf, int patch);
 
 int assign_name_to_buf(char **buf, struct expr_type e);
 void temp_var_name(int idx, char *buf);
+
+int digits (int num);
+int cstrcpy (char *dest, char *src);

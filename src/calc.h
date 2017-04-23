@@ -3,13 +3,13 @@
 
 #define _CALC
 
-struct btype_info{
-  char *name;
-  int size;
-};
+#define NOT_DEREF 0
+#define INDEX_EXPR 2
+#define DEREF_EXPR 1
 
-
-
+#define SET_NOT_DEREF(x) (x).deref.type = NOT_DEREF ; (x).deref.idx = NULL
+#define is_indexed(x) ((x).deref.type == INDEX_EXPR)
+#define is_derefd(x) ((x).deref.type == DEREF_EXPR)
 
 struct scope_type {
   int level;
@@ -55,6 +55,13 @@ struct type {
   struct array_type array;
 };
 
+
+struct btype_info{
+  char *name;
+  int size;
+  struct type t;
+};
+
 /* Data type for links in the chain of symbols.      */
 struct symrec
 {
@@ -71,9 +78,6 @@ struct alias_rec {
   struct type to;
 };
 
-
-
-
 struct memb_list {
   char *name;
   struct type type;
@@ -87,11 +91,6 @@ struct struct_type {
   int size;
   struct memb_list *elems;
 } ;
-
-struct func_rec {
-  int addr;
-  int *formal;
-};
 
 struct pair {
   int patch;
@@ -109,11 +108,20 @@ union expr_val {
   symrec *sym;
 };
 
+struct deref_info {
+  int type;
+  struct expr_type *idx; /* Stores expression for the index of [idx] */
+};
+
 struct expr_type {
   int ptr;
   union expr_val val;
   struct type type;
+  /* Stores info of dereference for 
+   * indexing and ptr deref expr */
+  struct deref_info deref; 
 };
+
 
 struct quad {
   int line;
@@ -122,7 +130,7 @@ struct quad {
 
 /* The symbol table: a chain of `struct symrec'.     */
 /* TODO: Change Symtable to struct list * */
-extern struct list *sym_table;
+extern struct list *global_sym_table;
 // Alias table, list of `struct alias_rec'
 extern struct list *aliases;
 // Struct and Unions table, list of `struct struct_type'
@@ -145,4 +153,5 @@ void create_alias(char *name, struct type type);
 struct memb_list *create_member (char *name, struct memb_list *join);
 
 int size_of (struct type t);
+int base_size_of (struct type t);
 

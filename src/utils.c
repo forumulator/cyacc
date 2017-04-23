@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "func.h"
 #include "gramm.h"
 #include <stdlib.h>
 #include <string.h>
@@ -47,6 +48,17 @@ create_const_expr (char *const_str) {
   SET_NOT_ARRAY(e.type);
   e.ptr = CONST_PTR;
   e.val.const_str = const_str;
+  SET_NOT_DEREF(e);
+  return e;
+}
+
+struct expr_type
+create_temp_expr (int temp, struct type t) {
+  struct expr_type e;
+  e.ptr = QUAD_PTR;
+  e.val.quad_no = temp;
+  e.type = t;
+  SET_NOT_DEREF(e);
 
   return e;
 }
@@ -57,11 +69,11 @@ create_sym_expr (symrec *sym) {
   ret.type.ttype = UNDEF_TYPE;
   if (!sym)
     return ret;
-
+  SET_NOT_ARRAY(ret.type);
   ret.ptr = SYM_PTR; 
   ret.type = sym->type;  // Think about it: redundancy, how to eliminate
   ret.val.sym = sym;
-
+  SET_NOT_DEREF(ret);
   return ret; 
 }
 
@@ -81,17 +93,28 @@ const_val (char *const_str) {
 
 int
 is_coercible (struct type to, struct type from) {
-    if (to.ttype == COMPOUND_TYPE || from.ttype == COMPOUND_TYPE)
-        return 0;
-    if (is_int_type(to) || is_int_type(from)) {
-      if (size_of(to) != size_of(from))
-        // With warning
-        return 2;
+  if (to.ttype == COMPOUND_TYPE || from.ttype == COMPOUND_TYPE)
+      return 0;
+  if (is_int_type(to) || is_int_type(from)) {
+    if (size_of(to) != size_of(from))
+      // With warning
+      return 2;
+    return 1;
+  }
+  if (to.ttype == PTR_TYPE && from.ttype == PTR_TYPE)
       return 1;
-    }
-    if (to.ttype == PTR_TYPE && from.ttype == PTR_TYPE)
-        return 1;
-    return (is_equiv(to, from));
+  return (is_equiv(to, from));
+}
+
+/* expressions are assignable only if they are an
+ * indexing or deref or a symbol */
+int
+is_assignable (struct expr_type e) {
+  if (e.ptr == SYM_PTR)
+    return true;
+  if (is_indexed(e) || is_derefd(e))
+    return true;
+  return false;
 }
 
 void 
@@ -196,26 +219,72 @@ make_patch_text (char **buf, int patch) {
     snprintf(*buf, 10, "$%d     ", patch);  
 }
 
+/* Ugly stuff, but basically if we pass a pointer to
+ * a NULL ptr, then we assign a buffer, else assume the 
+ * buffer is already assigned, the (int **) is cast 
+ * to (int *) */
 int
 assign_name_to_buf(char **buf, struct expr_type e) {
-  int mf = 0;
-  if (e.ptr == CONST_PTR)
-    *buf = e.val.const_str;
-  else if (e.ptr == QUAD_PTR) {
-    mf = 1;
-    *buf = malloc(10 * sizeof(char));
-    temp_var_name(e.val.quad_no, *buf);
+  int mf = 0; int pos = 0; char *name;
+
+  if (!*buf) {
+    *buf = malloc(MAX_IDENTIFIER_SIZE * sizeof(char));
+    name = *buf;
   }
   else 
-    *buf = (e.val.sym)->name;
+    name = (int *)buf;
+  
+  // if (is_derefd(e))
+  //   name[pos++] = '*';
 
-  return mf;
+  if (e.ptr == CONST_PTR)
+    pos += cstrcpy(name + pos, e.val.const_str) - 1;
+  else if (e.ptr == QUAD_PTR) {
+    mf = 1;
+    temp_var_name(e.val.quad_no, name + pos);
+    pos += digits(e.val.quad_no) + 1;
+  }
+  else 
+    pos += cstrcpy(name + pos, (e.val.sym)->name) - 1;
+
+  /* if e is indexed, then this will be a[idx] */
+  // if (is_indexed(e)) {
+  //   name[pos++] = '[';
+  //   name[pos] = 1;
+  //   pos += assign_name_to_buf((int **)(name + pos), *e.array.idx);
+  //   name[pos++] = ']';
+  // }
+
+  name[pos] = '\0';
+  return pos;
 }
+
 
 void
 temp_var_name(int idx, char *buf) {
+  if (!buf)
+    return;
   buf[0] = '_'; buf[1] = 't';
   snprintf(buf + 2, 7, "%d", idx);
 }
 
+/* Actually returns d + 1 for d digits */
+int 
+digits (int num) {
+  int d = 1;
+  while (num) {
+    num = num / 10;
+    d++;
+  } 
+  return d;
+}
 
+int
+cstrcpy (char *dest, char *src) {
+  if (!src || !dest)
+    return 0;
+  int nchars = 0;
+  while (*dest++ = *src++)
+    nchars++;
+  return nchars + 1;
+}
