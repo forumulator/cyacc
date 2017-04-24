@@ -23,6 +23,8 @@ int check_type();
 void count();
 %}
 
+%option yylineno
+
 %%
 "/*"			{ comment(); }
 
@@ -138,6 +140,13 @@ loop:
 		putchar(c1);
 }
 
+line_comment () 
+{
+	char c;
+	while ((c = input()) != '\n' && c)
+		putchar(c);
+	return;
+}
 
 int column = 0;
 
@@ -152,7 +161,8 @@ void count()
 			column += 8 - (column % 8);
 		else
 			column++;
-
+	lineno = yylineno;
+	colno = column;
 	ECHO;
 }
 

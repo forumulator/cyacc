@@ -228,24 +228,36 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   int mf = 0; int pos = 0; char *name;
 
   if (!*buf) {
+    printf("NOT *buf");
     *buf = malloc(MAX_IDENTIFIER_SIZE * sizeof(char));
     name = *buf;
   }
   else 
     name = (int *)buf;
+
+  printf("238\n");
+
   
   // if (is_derefd(e))
   //   name[pos++] = '*';
 
-  if (e.ptr == CONST_PTR)
+  if (e.ptr == CONST_PTR) {
+    printf("245\n");
     pos += cstrcpy(name + pos, e.val.const_str) - 1;
+    printf("245\n");
+  }
   else if (e.ptr == QUAD_PTR) {
+    printf("249\n");
     mf = 1;
     temp_var_name(e.val.quad_no, name + pos);
     pos += digits(e.val.quad_no) + 1;
+    printf("253\n");
   }
-  else 
+  else {
+    printf("255\n");
     pos += cstrcpy(name + pos, (e.val.sym)->name) - 1;
+    printf("258\n");
+  }
 
   /* if e is indexed, then this will be a[idx] */
   // if (is_indexed(e)) {
@@ -254,8 +266,9 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   //   pos += assign_name_to_buf((int **)(name + pos), *e.array.idx);
   //   name[pos++] = ']';
   // }
-
+  printf("Befor access\n");
   name[pos] = '\0';
+  printf("After access\n");
   return pos;
 }
 
@@ -286,5 +299,6 @@ cstrcpy (char *dest, char *src) {
   int nchars = 0;
   while (*dest++ = *src++)
     nchars++;
+  *dest = 0;
   return nchars + 1;
 }

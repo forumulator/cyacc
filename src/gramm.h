@@ -46,6 +46,9 @@
 extern int nlabel;
 extern int depth;
 
+int lineno;
+int colno;
+
 void out_label();
 int out_jmp(struct expr_type *e, void *label, int type);
 void backpatch(int label, int patch);

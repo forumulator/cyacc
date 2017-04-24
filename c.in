@@ -1,24 +1,56 @@
-int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
-int c = a;
-struct abc {
-	int b;
-	int c;
-};
-struct abc def = 2;
-b = !a + 2;
 
-if (a == 5)
+struct bst {
+	int t;
+};
+
+int func(int x) {
+	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
+	int c = a;
+	
+	b = !a + 2;
+
+	while (a < 10)
+	if (b == 6)
+		break;
+	done: ++a;
+
+	if (a == 5)
 	if (b < 4)
 		if (!c)
 			a = a + 2;
-else
-	a = 10;
+	else
+		a = 10;
 
-b = c;
+	b = c;
 
-goto done;
+	goto done;
+	return (c + a) * 2;
+}
 
-while (a < 10)
+
+
+int nujh() {
+	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
+	int c;
+	int gt[4][5];
+	a = gt[2][3];
+	
+	b = !a + 2;
+
+	while (a < 10)
 	if (b == 6)
 		break;
-done: ++a;
+	done: ++a;
+
+	if (a == 5)
+	if (b < 4)
+		if (!c)
+			a = a + 2;
+	else
+		a = 10;
+
+	b = c;
+	c = func(b);
+
+	goto done;
+}

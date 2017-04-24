@@ -118,62 +118,7 @@ struct_calc_offset (struct struct_type *stype, char *name) {
   return -1;
 }
 
-symrec *
-putsym (struct func_rec *active_func, char *sym_name, 
-    struct type sym_type, struct scope_type scope)
-{
-  struct list *sym_table;
-  if (active_func)
-    sym_table = active_func->sym_table;
-  else
-    sym_table = global_sym_table;
 
-  symrec *ptr;
-  ptr = (symrec *) malloc (sizeof (symrec));
-  copy_name(&ptr->name, sym_name);
-  ptr->type = sym_type;
-  // ptr->value.var = 0; /* set value to 0 even if fctn.  */
-  scope.over = 0;
-  ptr->scope = scope;
-
-  list_append_elem(&sym_table, list_create_elem(((void *)ptr)));
-  return ptr;
-}
-
-symrec *
-getsym (struct func_rec *active_func, 
-    char *sym_name, struct scope_type scope)
-{
-  struct list *sym_table;
-  struct list* node;
-  symrec *ptr, *ret = NULL;
-  if (active_func) {
-    sym_table = active_func->sym_table;
-    int larg = -1;
-    for (node = sym_table; node; node = node->next) {
-      ptr = (symrec *)node->data;
-        // Check scoping rules too
-      if (!ptr->scope.over && ptr->scope.level <= scope.level
-          && scope.level > larg && !strcmp (ptr->name,sym_name)) {
-        ret = ptr;
-        larg = ptr->scope.level;
-      }
-    }
-  }  
-  if (ret)
-    return ret;
-
-  sym_table = global_sym_table;
-  for (node = sym_table; node; node = node->next) {
-    ptr = (symrec *)node->data;
-      // Check scoping rules too
-    if (!strcmp (ptr->name, sym_name))
-      return ret;
-  }
-  
-  return NULL;
-
-}
 
 void
 delsym_scope(int depth) {

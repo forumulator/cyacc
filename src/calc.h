@@ -137,8 +137,7 @@ extern struct list *aliases;
 extern struct list *cmpnd_types;
 extern struct btype_info basic_types[];
 
-symrec *putsym ();
-symrec *getsym ();
+
 void delsym_scope(int depth);
 
 struct struct_type *create_struct(char *name, struct memb_list* elems, int incompl);

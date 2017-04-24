@@ -23,3 +23,10 @@ struct func_rec *create_func(char *func_name,
 				struct type func_type);
 struct func_rec *search_func(char *func_name);
 void create_param (struct func_rec *f, symrec *sym);
+
+symrec *putsym (struct func_rec *active_func, char *sym_name, 
+    struct type sym_type, struct scope_type scope);
+symrec *getsym (struct func_rec *active_func, 
+    char *sym_name, struct scope_type scope);
+
+void print_sym_table(struct list *sym_table);

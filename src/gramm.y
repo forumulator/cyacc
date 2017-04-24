@@ -4,7 +4,7 @@
 /* TODO: SET INDICES and #defines PROPERLY */
 
 %{
-// #include "calc.h"  /* Contains definition of `symrec'        */
+#include "calc.h"  /* Contains definition of `symrec'        */
 #include "utils.h"
 #include <stdio.h>
 #include <string.h>
@@ -158,12 +158,13 @@ return_statement  : RETURN expr ';' { out_return(&$2); }
 
 /* TODO: prototypes */
 /* ERROR HANDLING syntax vs. semantic errors */
-function_definition  : func_head block_statement
+function_definition  : func_head block_statement 
             {
               active_func = NULL;
               scope.level--;
-
-              out_end_func();        
+              printf("165\n");
+              out_end_func();  
+              printf("167\n");      
             }
             ;
 
@@ -174,9 +175,9 @@ func_head : res_id begin_params '(' param_decl_list ')' end_params
             }
           ;
 
-begin_params : /* empty */ { scope.level++; scope.label = label_no; }
+begin_params : /* empty */ { printf("178\n");scope.level++; scope.label = label_no; }
             ;
-end_params : /* empty */ { scope.level--; }
+end_params : /* empty */ { printf("180\n");scope.level--; }
             ;
 
 res_id  : type_name IDENTIFIER
@@ -195,7 +196,7 @@ res_id  : type_name IDENTIFIER
         ;
 
 param_decl_list : param_list
-                | /* empty */
+                | /* empty */ { printf("199\n"); }
                 ;
 
 param_list  : param_decl
@@ -205,7 +206,7 @@ param_list  : param_decl
 param_decl  : type_name symbol_name
               {
                 struct array_type arr;
-                symrec *sym = getsym(active_func, $2.name);
+                symrec *sym = getsym(active_func, $2.name, scope);
                 if (sym && sym->scope.level == scope.level)
                   error("Redefinition of parameter");
                 sym = putsym(active_func, $2.name, $1, scope);
@@ -254,10 +255,17 @@ begin_sub :   /* eps */
 
 end_sub   :   /* eps */
               {
-                list_pop_front(&nested);
-                scope.label = (int) nested->data;
-                delsym_scope(scope.level);
+                printf("257\n");
+                void *data = list_pop_front(&nested);
+                printf("259\n");
+                printf("%d\n", nested);
+                scope.label = (int) data;
+                printf("262\n");
+
+                // delsym_scope(scope.level);
                 scope.level--;
+                printf("267\n");
+
               }
           ;
 
@@ -485,19 +493,26 @@ declaration_statement : type_name var_dlist ';'
                         }
                       ;
           
-var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; }
+var_dlist : var_definition ',' var_dlist { printf("Entering var_dlist"); list_prepend_elem(&$3, $1); $$ = $3; printf("Leaving var_dlist") }
           | var_definition { $$ = $1; }
           ;
 
 
 var_definition  : symbol_name opt_init 
                   {
-                    symrec *rec = getsym($1.name, scope);
+                    printf("495\n");
+                    symrec *rec = getsym(active_func, $1.name, scope);
                     if (rec && rec->scope.level == scope.level) {
                       error("Redefinition of symbol");
                     }
-                    rec = putsym($1.name, $1.type, scope);
-                    $$ = list_create_elem(rec);            
+                    printf("500\n");
+
+                    rec = putsym(active_func, $1.name, $1.type, scope);
+                    printf("503\n");
+
+                    $$ = list_create_elem(rec);  
+                    printf("506\n");
+
                     
                     // Assign result of expr to vaiable
                     // This is should be delayed to after the 
@@ -506,6 +521,7 @@ var_definition  : symbol_name opt_init
                         out_assign($1.name, $2);
                     }
                     free($1.name);
+                    printf("510\n");
                   }
                 ;
 
@@ -530,8 +546,9 @@ symbol_name : IDENTIFIER
                   t->array.dimen = malloc(MAX_ARRAY_DIMEN * sizeof(int));
                   t->array.n = 1;
                 }
-                else
+                else {
                   t->array.n++;
+                }
                 if (t->array.n == MAX_ARRAY_DIMEN)
                   error("Can't have more than 256 dimension array");
                 t->array.dimen[t->array.n - 1] = size;
@@ -574,7 +591,7 @@ primary_expr  : CONSTANT  {
                   SET_NOT_DEREF($$);
                 }
               | IDENTIFIER { 
-                  symrec *rec = getsym($1, scope);
+                  symrec *rec = getsym(active_func, $1, scope);
                   if (!rec) {
                     error("Undefined symbol\n");
                   }
@@ -605,9 +622,11 @@ function_call : func_name '(' actual_params_list ')'
                     if (!is_equiv(t, e->type) && !is_coercible(t, e->type))
                       error("incompatible type for argument");
                     out_param(*e);
+                    fp = fp->next;
+                    ap = ap->next;
                   }
 
-                  if (!fp || !ap)
+                  if (fp || ap)
                     error("argument number mismatch");
 
                   $$.ptr = QUAD_PTR; $$.val.quad_no = next_quad;
@@ -763,6 +782,7 @@ init_globals() {
   for (i = 0; i< MAX_NEST_DEPTH; ++i)
     patches[i] = 0;
   scope.level = scope.label = scope.over = 0;
+  active_func = NULL;
 }
 
 yyerror (s)  /* Called by yyparse on error */
@@ -773,7 +793,8 @@ yyerror (s)  /* Called by yyparse on error */
 
 void
 error (char *msg) {
-  printf("error: %s\n", msg);
+  printf("%d:%d: error: %s\n", lineno, colno, msg);
+  fclose(outfile);
   exit(1);
 }
 
@@ -814,13 +835,17 @@ out_gen_quad (struct expr_type e) {
 int
 out_jmp(struct expr_type *e, void *label, int type) {
   char *ltext, *cond, *name = NULL; int i = -1;
-  int mf1;
+  int mf1 = 0;
+  printf("834\n");
   if (!label) {
     // 5 spaces, temporarily so that label name can be accomodated
+  printf("837\n");
+
     mf1 = 1;
     i = 0;
     while(i < MAX_NEST_DEPTH && i < patches[i])
       i++;
+  printf("843\n");
 
     if (i == MAX_NEST_DEPTH)
       error("Can't nest more than 256 levels");
@@ -829,6 +854,8 @@ out_jmp(struct expr_type *e, void *label, int type) {
     patches[i] = 1;
   }
   else {
+  printf("852\n");
+
     if (type == JUMP_LABEL_NUMBER) {
       mf1 = 1;
       make_label_text(&ltext, *((int *)label));
@@ -839,25 +866,45 @@ out_jmp(struct expr_type *e, void *label, int type) {
       // Jump to patch number
       mf1 = 1;
       make_patch_text(&ltext, *((int *) label));
+  printf("864\n");
+
 
     }
   }
+
+  printf("869\n");
 
   if (e) {
     cond = malloc(100 * sizeof(char));
     assign_name_to_buf(&name, *e);
     printf("Befor cond print\n");
     snprintf(cond, 100, "if ( %s == 0 )\n", name);
+  printf("877\n");
+
     printf(cond);
   }
   else 
     cond = "";
+  printf("883\n");
 
   fprintf(outfile, "%s goto %s\n", cond, ltext);
+  printf("886\n");
 
-  if (mf1)  free(ltext);
-  if (e) free(cond);
-  free(name);
+  if (mf1)  {
+  printf("889\n");
+
+    free(ltext);
+  printf("892\n");
+
+  }
+  if (e) {
+  printf("890\n");
+
+    free(cond);
+    free(name);
+  }
+
+  printf("returning\n");
 
   return i;
 }
@@ -899,8 +946,16 @@ parse_unary_expr (struct expr_type *result,
       e1 = get_vector_elem(e1);
     // Check for coercibility here
     int qno = next_quad;
+    printf("911\n");
+
     make_two_quad(e1, op);
-    result->ptr = QUAD_PTR; result->val.quad_no = qno;
+    printf("914\n");
+
+    result->ptr = QUAD_PTR; 
+    result->val.quad_no = qno;
+    result->type = e1.type;
+    SET_NOT_DEREF((*result));
+    printf("913\n");
     // $$.type = MAX($1.type, $3.type);
 }
 
@@ -908,15 +963,25 @@ parse_unary_expr (struct expr_type *result,
 void
 parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op) {
+  printf("Entering parse_expr");
     // Check for coercibility here
   if (is_indexed(e1) || is_derefd(e1))
     e1 = get_vector_elem(e1);
   if (is_indexed(e2) || is_derefd(e2))
     e2 = get_vector_elem(e2);
+  printf("917");
   int qno = next_quad;
   make_quad(e1, e2, op);
+  printf("920");
+
   result->ptr = QUAD_PTR; result->val.quad_no = qno;
+  result->type = e1.type;
+  printf("924");
+
   SET_NOT_DEREF((*result));
+  printf("927");
+
+  printf("Leaving, %c", (char)op);
   // $$.type = MAX($1.type, $3.type);
 }
 
@@ -938,15 +1003,24 @@ make_two_quad (struct expr_type e1, int op) {
 void
 make_quad_by_name (char *e1, char *e2, int op) {
   char tname[10]; temp_var_name(next_quad++, tname);
-  int i, idx;
+  int i, idx = -1;
+  printf("OP:%d\n", op);
   for (i = 0; i < BIGOPS_NUM; ++i) {
     if (bigops[i].op == op)
       idx = i;
   }
-  if (idx == -1)
+  printf("956\n");
+  if (idx == -1) {
+        printf("958\n");
+
     fprintf(outfile, "%s = %s %c %s\n", tname, e1, (char)op, e2);
-  else
+  }
+  else {
+        printf("963\n");
+
     fprintf(outfile, "%s = %s %s %s\n", tname, e1, bigops[idx].str, e2);
+  }
+  printf("967\n");
   return;
 }
 
@@ -964,45 +1038,72 @@ make_quad (struct expr_type e1, struct expr_type e2, int op) {
     char *s1 = NULL, *s2 = NULL;
     assign_name_to_buf(&s1, e1);
     assign_name_to_buf(&s2, e2);   
-
+    printf("977\n");
     make_quad_by_name(s1, s2, op);
+    printf("979\n");
 
     free(s1); free(s2);
+    printf("982\n");
+
     return;
 }
 
 /* TODO: Change */
 struct expr_type
 out_member_ref (struct expr_type e, char *mem) {
+  printf("1052\n");
   struct expr_type ret;
   if (e.type.ttype != COMPOUND_TYPE)
     error("request for member in something not a structure or union");
+  printf("1056\n");
+
   int oft = struct_calc_offset(e.type.val.stype, mem);
   if (oft == -1)
     error("struct has no member named this");
+  printf("1061\n");
+
   ret.type = struct_get_elem(e.type.val.stype, oft);
+  printf("1064\n");
+
   ret.val.quad_no = next_quad;
   ret.ptr = QUAD_PTR;
+  printf("1066\n");
 
   out_const_index(e, oft);
+  printf("1069\n");
+
   return ret;
 }
 
 void
 out_vector_offset (struct expr_type e, struct expr_type idx) {
   char *const_str; char *mname = NULL; 
-  int oft_temp = next_quad++;
+  printf("1033\n");
+
+  int oft_temp = next_quad;
+  printf("1036\n");
   int sz_target;
-  if (is_pointer(e.type))
+  if (is_pointer(e.type)) {
     sz_target = size_of(*e.type.val.ptr_to);
+  printf("1040\n");
+  }
+
   else {
+  printf("1043\n");
+
     struct array_type *t = &e.type.array;
-    sz_target = t->size - t->dimen[0];
+    sz_target = (t->size/t->dimen[0]) * base_size_of(e.type);
+  printf("1046\n");
+
   }
   int d = digits(sz_target);
   const_str = malloc(d * sizeof(int));
+  printf("1052\n");
+
   snprintf(const_str, d, "%d", sz_target);
   assign_name_to_buf(&mname, idx);
+  printf("1056\n");
+
   make_quad_by_name(mname, const_str, '*');
 
   free(mname);
@@ -1014,6 +1115,7 @@ out_index (struct expr_type e) {
   int oft_temp = next_quad, mf;
   char *name = NULL;
   out_vector_offset(e, *e.deref.idx);
+  // error("Here");
 
   char tname[10], oft_name[10]; 
   assign_name_to_buf(&name, e);
@@ -1092,8 +1194,10 @@ get_vector_elem (struct expr_type e) {
   if (is_array(e.type)) {
     if (is_derefd(e)) 
       out_const_index(e, 0);
-    else
+    else {
       out_index(e);
+      ret.val.quad_no++;
+    }
     ret.type = arr_reduce_dimen(e.type);
   }
   else {
@@ -1122,7 +1226,7 @@ void out_label () {
 struct expr_type
 compound_indexing (struct expr_type e, struct expr_type idx) {
   struct expr_type ret = e;
-  int incr_size = e.type.array.size - e.type.array.dimen[0];
+  int incr_size = e.type.array.size/e.type.array.dimen[0];
   char const_str[MAX_INT_SIZE];  snprintf(const_str, MAX_INT_SIZE, "%d", incr_size);
 
   make_quad_with_const(*(e.deref.idx), const_str, '*');
@@ -1159,13 +1263,27 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 int 
 sout_expr_with_deref (char *buf, struct expr_type e) {
   int t1 = next_quad; char *name = NULL;
+  printf("1201\n");
+
   assign_name_to_buf(&name, e);
   if (is_derefd(e)) {
+  printf("1205\n");
+
     return sprintf(buf, "*%s ", name);
+  printf("1208\n");
+
+  }
+  else if (is_indexed(e)) {
+  printf("1210, \n");
+
+    out_vector_offset(e, *(e.deref.idx));
+  printf("1215\n");
+
+    return sprintf(buf, "%s[_t%d] ", name, t1);
   }
   else {
-    out_vector_offset(e, *e.deref.idx);
-    return sprintf(buf, "%s[_t%d] ", name, t1);
+    printf("Name: %s\n", name);
+    return sprintf(buf, "%s", name);
   }
 
 }
@@ -1174,33 +1292,50 @@ void
 out_assign_expr (struct expr_type lval, struct expr_type rval) {
   char *assign = malloc(2 * MAX_IDENTIFIER_SIZE * sizeof(char));
   int pos = 0;
+  printf("1216\n");
   pos += sout_expr_with_deref(assign, lval);
+  printf("1218\n");
+  assign[pos++] = ' ';
   assign[pos++] = '='; assign[pos++] = ' ';
   pos += sout_expr_with_deref(assign + pos, rval);
-  assign[pos - 1] = '\n';
-  fprintf(outfile, assign);
+  // assign[pos++] = '\n';
+  assign[pos] = 0;
+  printf("1223\n");
+
+  fprintf(outfile, "OA: %s\n", assign);
+  printf("1226\n");
 
   free(assign);
+  printf("1229\n");
+
   return;
 }
 
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
+  printf("1228\n");
   struct expr_type result; 
   if (is_void_type(rval.type))
     error("void value not ignored as it ought to be");
+  printf("1232\n");
 
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
   if (is_equiv(lval.type, rval.type)) {
+    printf("1237\n");
+
     out_assign_expr(lval, rval);
     return;
   }
+  printf("1240\n");
+
   if (is_coercible(lval.type, rval.type)) {
     /* Warning goes here */
     out_assign_expr(lval, rval);
     return;
   } 
+  printf("1247\n");
+
   
   /* Inconvertible, eg. incompatible types when assigning
    * to type 'float' from type 'int *' */
@@ -1215,7 +1350,7 @@ out_begin_func () {
 
 void
 out_end_func () {
-  fprintf(outfile, "FUNCTION END\n");
+  fprintf(outfile, "FUNCTION END\n\n\n");
 }
 
 void
@@ -1247,7 +1382,7 @@ out_param (struct expr_type e) {
   char *name = NULL;
   assign_name_to_buf(&name, e);
 
-  fprintf(outfile, "param %s", name);
+  fprintf(outfile, "param %s\n", name);
   free(name);
 }
 

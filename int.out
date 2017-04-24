@@ -1,0 +1,89 @@
+FUNCTION BEGIN:
+_L1: _t0 = 6 + 5
+_t1 = _t * 2
+_t2 = 4 * _t1
+_t3 = 2 + _t2
+a = _t3
+b = 5
+c = a
+_t4 = ! a 
+_t5 = _t4 + 2
+OA: b = _t5
+_t6 = a < 10
+_L2: if ( _t6 == 0 )
+ goto _L4    
+_t7 = b == 6
+if ( _t7 == 0 )
+ goto _L3    
+ goto _L4    
+_L3:  goto _L2
+_L4: done: _t8 = a + 1
+a = _t8
+_t9 = a == 5
+if ( _t9 == 0 )
+ goto _L8    
+_t10 = b < 4
+if ( _t10 == 0 )
+ goto _L5    
+_t11 = ! c 
+if ( _t11 == 0 )
+ goto _L5    
+_t12 = a + 2
+OA: a = _t12
+ goto _L5    
+_L5: OA: a = 10
+_L6: _L7: _L8: OA: b = c
+ goto done
+_t13 = c + a
+_t14 = _t13 * 2
+return _t14
+FUNCTION END
+
+
+FUNCTION BEGIN:
+_L9: _t15 = 6 + 5
+_t16 = _t15 * 2
+_t17 = 4 * _t16
+_t18 = 2 + _t17
+a = _t18
+b = 5
+_t19 = 2 * 5
+_t20 = 3 + _t20
+_t21 = _t20 * 4
+OA: a = gt[_t21] 
+_t22 = ! a 
+_t23 = _t22 + 2
+OA: b = _t23
+_t24 = a < 10
+_L10: if ( _t24 == 0 )
+ goto _L12   
+_t25 = b == 6
+if ( _t25 == 0 )
+ goto _L11   
+ goto _L12   
+_L11:  goto _L10
+_L12: done: _t26 = a + 1
+a = _t26
+_t27 = a == 5
+if ( _t27 == 0 )
+ goto _L16   
+_t28 = b < 4
+if ( _t28 == 0 )
+ goto _L13   
+_t29 = ! c 
+if ( _t29 == 0 )
+ goto _L13   
+_t30 = a + 2
+OA: a = _t30
+ goto _L13   
+_L13: OA: a = 10
+_L14: _L15: _L16: OA: b = c
+param b
+param _result
+call func, 1
+_t31 = _result
+OA: c = _t31
+ goto done
+FUNCTION END
+
+
