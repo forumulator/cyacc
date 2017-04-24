@@ -565,16 +565,16 @@ static const yytype_uint16 yyrline[] =
 {
        0,   127,   127,   128,   131,   132,   133,   136,   137,   140,
      141,   142,   143,   144,   145,   146,   147,   148,   152,   155,
-     156,   161,   171,   178,   180,   183,   198,   199,   202,   203,
-     206,   242,   246,   257,   272,   273,   280,   294,   313,   314,
-     317,   324,   325,   330,   342,   343,   346,   360,   364,   370,
-     384,   385,   389,   396,   402,   405,   410,   420,   430,   435,
-     444,   451,   458,   496,   497,   501,   530,   539,   558,   567,
-     574,   575,   576,   577,   578,   579,   582,   583,   587,   593,
-     601,   602,   606,   641,   643,   644,   645,   651,   662,   663,
-     664,   665,   666,   667,   668,   678,   688,   697,   706,   707,
-     708,   709,   710,   711,   712,   713,   714,   715,   716,   717,
-     718,   719,   720,   721,   722,   723,   725,   728
+     156,   161,   169,   176,   178,   181,   196,   197,   200,   201,
+     204,   240,   244,   255,   263,   264,   271,   285,   304,   305,
+     308,   315,   316,   321,   333,   334,   337,   351,   355,   361,
+     375,   376,   380,   387,   393,   396,   401,   411,   421,   426,
+     435,   442,   449,   487,   488,   492,   516,   525,   544,   553,
+     560,   561,   562,   563,   564,   565,   568,   569,   573,   579,
+     587,   588,   592,   627,   629,   630,   631,   637,   648,   649,
+     650,   651,   652,   653,   654,   664,   674,   683,   692,   693,
+     694,   695,   696,   697,   698,   699,   700,   701,   702,   703,
+     704,   705,   706,   707,   708,   709,   711,   714
 };
 #endif
 
@@ -1848,16 +1848,14 @@ yyreduce:
     {
               active_func = NULL;
               scope.level--;
-              printf("165\n");
               out_end_func();  
-              printf("167\n");      
             ;}
     break;
 
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 172 "src/gramm.y"
+#line 170 "src/gramm.y"
     {
               active_func->label = label_no;
               out_begin_func();
@@ -1867,21 +1865,21 @@ yyreduce:
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 178 "src/gramm.y"
-    { printf("178\n");scope.level++; scope.label = label_no; ;}
+#line 176 "src/gramm.y"
+    { scope.level++; scope.label = label_no; ;}
     break;
 
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 180 "src/gramm.y"
-    { printf("180\n");scope.level--; ;}
+#line 178 "src/gramm.y"
+    { scope.level--; ;}
     break;
 
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 184 "src/gramm.y"
+#line 182 "src/gramm.y"
     {
             struct func_rec *func;
             if (func = search_func((yyvsp[(2) - (2)].id_name))) {
@@ -1899,14 +1897,14 @@ yyreduce:
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 199 "src/gramm.y"
-    { printf("199\n"); ;}
+#line 197 "src/gramm.y"
+    { ;}
     break;
 
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 207 "src/gramm.y"
+#line 205 "src/gramm.y"
     {
                 struct array_type arr;
                 symrec *sym = getsym(active_func, (yyvsp[(2) - (2)].sym_npt).name, scope);
@@ -1943,7 +1941,7 @@ yyreduce:
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 246 "src/gramm.y"
+#line 244 "src/gramm.y"
     {
                 scope.label = label_no;
                 // Push scope info onto stack
@@ -1957,26 +1955,19 @@ yyreduce:
   case 33:
 
 /* Line 1455 of yacc.c  */
-#line 257 "src/gramm.y"
+#line 255 "src/gramm.y"
     {
-                printf("257\n");
                 void *data = list_pop_front(&nested);
-                printf("259\n");
-                printf("%d\n", nested);
                 scope.label = (int) data;
-                printf("262\n");
-
                 // delsym_scope(scope.level);
                 scope.level--;
-                printf("267\n");
-
               ;}
     break;
 
   case 36:
 
 /* Line 1455 of yacc.c  */
-#line 281 "src/gramm.y"
+#line 272 "src/gramm.y"
     { 
                       printf("nam1e %s\n", (yyvsp[(2) - (5)].t_name));
                       if (get_struct((yyvsp[(2) - (5)].t_name)))
@@ -1995,7 +1986,7 @@ yyreduce:
   case 37:
 
 /* Line 1455 of yacc.c  */
-#line 295 "src/gramm.y"
+#line 286 "src/gramm.y"
     {
                     printf("name2 %s\n", (yyvsp[(2) - (2)].t_name));
 
@@ -2017,21 +2008,21 @@ yyreduce:
   case 38:
 
 /* Line 1455 of yacc.c  */
-#line 313 "src/gramm.y"
+#line 304 "src/gramm.y"
     { (yyval.ttype) = STRUCT_TAG; ;}
     break;
 
   case 39:
 
 /* Line 1455 of yacc.c  */
-#line 314 "src/gramm.y"
+#line 305 "src/gramm.y"
     { (yyval.ttype) = UNION_TAG; ;}
     break;
 
   case 40:
 
 /* Line 1455 of yacc.c  */
-#line 318 "src/gramm.y"
+#line 309 "src/gramm.y"
     {
                 copy_name(&(yyval.t_name), (yyvsp[(1) - (1)].id_name));
                 printf("%s\n", (yyval.t_name));
@@ -2041,21 +2032,21 @@ yyreduce:
   case 41:
 
 /* Line 1455 of yacc.c  */
-#line 324 "src/gramm.y"
+#line 315 "src/gramm.y"
     { (yyval.t_name) = ""; ;}
     break;
 
   case 42:
 
 /* Line 1455 of yacc.c  */
-#line 325 "src/gramm.y"
+#line 316 "src/gramm.y"
     { (yyval.t_name) = (yyvsp[(1) - (1)].t_name); ;}
     break;
 
   case 43:
 
 /* Line 1455 of yacc.c  */
-#line 331 "src/gramm.y"
+#line 322 "src/gramm.y"
     {
                 // Join the two lists. 
                 struct memb_list *mem = (yyvsp[(1) - (2)].tlist);
@@ -2069,21 +2060,21 @@ yyreduce:
   case 44:
 
 /* Line 1455 of yacc.c  */
-#line 342 "src/gramm.y"
+#line 333 "src/gramm.y"
     { (yyval.tlist) = NULL; ;}
     break;
 
   case 45:
 
 /* Line 1455 of yacc.c  */
-#line 343 "src/gramm.y"
+#line 334 "src/gramm.y"
     { (yyval.tlist) = (yyvsp[(1) - (1)].tlist); ;}
     break;
 
   case 46:
 
 /* Line 1455 of yacc.c  */
-#line 347 "src/gramm.y"
+#line 338 "src/gramm.y"
     {
                 // Set types for all members
                 struct memb_list *mem = (yyvsp[(2) - (3)].tlist);
@@ -2100,7 +2091,7 @@ yyreduce:
   case 47:
 
 /* Line 1455 of yacc.c  */
-#line 361 "src/gramm.y"
+#line 352 "src/gramm.y"
     {
                     (yyval.tlist) = create_member((yyvsp[(1) - (1)].id_name), NULL);
                   ;}
@@ -2109,7 +2100,7 @@ yyreduce:
   case 48:
 
 /* Line 1455 of yacc.c  */
-#line 365 "src/gramm.y"
+#line 356 "src/gramm.y"
     {
                     (yyval.tlist) = create_member((yyvsp[(1) - (3)].id_name), (yyvsp[(3) - (3)].tlist)); 
                   ;}
@@ -2118,7 +2109,7 @@ yyreduce:
   case 49:
 
 /* Line 1455 of yacc.c  */
-#line 371 "src/gramm.y"
+#line 362 "src/gramm.y"
     { 
               struct type *t;
               if (t = get_alias((yyvsp[(3) - (3)].id_name)))  {
@@ -2134,7 +2125,7 @@ yyreduce:
   case 52:
 
 /* Line 1455 of yacc.c  */
-#line 390 "src/gramm.y"
+#line 381 "src/gramm.y"
     { 
                     printf("%d", cur_loop.label);
                     if (cur_loop.label == -1)
@@ -2146,7 +2137,7 @@ yyreduce:
   case 53:
 
 /* Line 1455 of yacc.c  */
-#line 397 "src/gramm.y"
+#line 388 "src/gramm.y"
     { 
                     if (cur_loop.label == -1)
                       error("break statement not within a loop or a switch");
@@ -2157,14 +2148,14 @@ yyreduce:
   case 54:
 
 /* Line 1455 of yacc.c  */
-#line 402 "src/gramm.y"
+#line 393 "src/gramm.y"
     { out_jmp(NULL, (void *)(yyvsp[(2) - (3)].id_name), JUMP_LABEL_NAME); ;}
     break;
 
   case 56:
 
 /* Line 1455 of yacc.c  */
-#line 411 "src/gramm.y"
+#line 402 "src/gramm.y"
     {
                         out_jmp(NULL, &((yyvsp[(1) - (2)].loop).this.label), JUMP_LABEL_NUMBER);
                         int label = label_no;
@@ -2177,7 +2168,7 @@ yyreduce:
   case 57:
 
 /* Line 1455 of yacc.c  */
-#line 421 "src/gramm.y"
+#line 412 "src/gramm.y"
     {
                         (yyval.loop).prev = cur_loop; 
                         (yyval.loop).this.label = label_no;
@@ -2190,7 +2181,7 @@ yyreduce:
   case 58:
 
 /* Line 1455 of yacc.c  */
-#line 430 "src/gramm.y"
+#line 421 "src/gramm.y"
     {
                           int l_no = label_no;
                           out_label();
@@ -2201,7 +2192,7 @@ yyreduce:
   case 59:
 
 /* Line 1455 of yacc.c  */
-#line 436 "src/gramm.y"
+#line 427 "src/gramm.y"
     {
                           int l_no = label_no;
                           out_label();
@@ -2213,7 +2204,7 @@ yyreduce:
   case 60:
 
 /* Line 1455 of yacc.c  */
-#line 444 "src/gramm.y"
+#line 435 "src/gramm.y"
     {
                 // returns patch number
                 (yyval.patch) = out_jmp(&(yyvsp[(3) - (4)].e), (void *)NULL, 0);
@@ -2224,7 +2215,7 @@ yyreduce:
   case 61:
 
 /* Line 1455 of yacc.c  */
-#line 451 "src/gramm.y"
+#line 442 "src/gramm.y"
     {
                     (yyval.dual_patch).patch = out_jmp(NULL, NULL, 0);
                     (yyval.dual_patch).label = label_no;
@@ -2235,7 +2226,7 @@ yyreduce:
   case 62:
 
 /* Line 1455 of yacc.c  */
-#line 459 "src/gramm.y"
+#line 450 "src/gramm.y"
     {
                           struct list *node = (yyvsp[(2) - (3)].l);
                           struct symrec *sym;
@@ -2276,34 +2267,30 @@ yyreduce:
   case 63:
 
 /* Line 1455 of yacc.c  */
-#line 496 "src/gramm.y"
+#line 487 "src/gramm.y"
     { printf("Entering var_dlist"); list_prepend_elem(&(yyvsp[(3) - (3)].l), (yyvsp[(1) - (3)].l)); (yyval.l) = (yyvsp[(3) - (3)].l); printf("Leaving var_dlist") ;}
     break;
 
   case 64:
 
 /* Line 1455 of yacc.c  */
-#line 497 "src/gramm.y"
+#line 488 "src/gramm.y"
     { (yyval.l) = (yyvsp[(1) - (1)].l); ;}
     break;
 
   case 65:
 
 /* Line 1455 of yacc.c  */
-#line 502 "src/gramm.y"
+#line 493 "src/gramm.y"
     {
-                    printf("495\n");
                     symrec *rec = getsym(active_func, (yyvsp[(1) - (2)].sym_npt).name, scope);
                     if (rec && rec->scope.level == scope.level) {
                       error("Redefinition of symbol");
                     }
-                    printf("500\n");
 
                     rec = putsym(active_func, (yyvsp[(1) - (2)].sym_npt).name, (yyvsp[(1) - (2)].sym_npt).type, scope);
-                    printf("503\n");
 
                     (yyval.l) = list_create_elem(rec);  
-                    printf("506\n");
 
                     
                     // Assign result of expr to vaiable
@@ -2313,14 +2300,13 @@ yyreduce:
                         out_assign((yyvsp[(1) - (2)].sym_npt).name, (yyvsp[(2) - (2)].e));
                     }
                     free((yyvsp[(1) - (2)].sym_npt).name);
-                    printf("510\n");
                   ;}
     break;
 
   case 66:
 
 /* Line 1455 of yacc.c  */
-#line 531 "src/gramm.y"
+#line 517 "src/gramm.y"
     {
                 copy_name(&(yyval.sym_npt).name, (yyvsp[(1) - (1)].id_name));
                 // Create a new symbol table record
@@ -2333,7 +2319,7 @@ yyreduce:
   case 67:
 
 /* Line 1455 of yacc.c  */
-#line 540 "src/gramm.y"
+#line 526 "src/gramm.y"
     {
                 struct type *t = &((yyvsp[(1) - (4)].sym_npt).type);
                 if (const_type((yyvsp[(3) - (4)].e).val.const_str) != INT_TYPE)
@@ -2357,7 +2343,7 @@ yyreduce:
   case 68:
 
 /* Line 1455 of yacc.c  */
-#line 559 "src/gramm.y"
+#line 545 "src/gramm.y"
     {
                 struct type *to = malloc(sizeof(struct type));
                 *to = (yyvsp[(2) - (2)].sym_npt).type; // TYPE COPYING
@@ -2371,70 +2357,70 @@ yyreduce:
   case 69:
 
 /* Line 1455 of yacc.c  */
-#line 567 "src/gramm.y"
+#line 553 "src/gramm.y"
     { (yyval.sym_npt) = (yyvsp[(2) - (3)].sym_npt); ;}
     break;
 
   case 70:
 
 /* Line 1455 of yacc.c  */
-#line 574 "src/gramm.y"
+#line 560 "src/gramm.y"
     { (yyval.type) = basic_types[INT_TYPE].t; ;}
     break;
 
   case 71:
 
 /* Line 1455 of yacc.c  */
-#line 575 "src/gramm.y"
+#line 561 "src/gramm.y"
     { (yyval.type) = basic_types[FLOAT_TYPE].t; ;}
     break;
 
   case 72:
 
 /* Line 1455 of yacc.c  */
-#line 576 "src/gramm.y"
+#line 562 "src/gramm.y"
     { (yyval.type) = basic_types[CHAR_TYPE].t; ;}
     break;
 
   case 73:
 
 /* Line 1455 of yacc.c  */
-#line 577 "src/gramm.y"
+#line 563 "src/gramm.y"
     { (yyval.type) = basic_types[VOID_TYPE].t; ;}
     break;
 
   case 74:
 
 /* Line 1455 of yacc.c  */
-#line 578 "src/gramm.y"
+#line 564 "src/gramm.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); ;}
     break;
 
   case 75:
 
 /* Line 1455 of yacc.c  */
-#line 579 "src/gramm.y"
+#line 565 "src/gramm.y"
     { (yyval.type) = *(yyvsp[(1) - (1)].alias_type); ;}
     break;
 
   case 76:
 
 /* Line 1455 of yacc.c  */
-#line 582 "src/gramm.y"
+#line 568 "src/gramm.y"
     { printf("In opt_init"); (yyval.e) = (yyvsp[(2) - (2)].e); ;}
     break;
 
   case 77:
 
 /* Line 1455 of yacc.c  */
-#line 583 "src/gramm.y"
+#line 569 "src/gramm.y"
     { (yyval.e).type.ttype = UNDEF_TYPE; ;}
     break;
 
   case 78:
 
 /* Line 1455 of yacc.c  */
-#line 587 "src/gramm.y"
+#line 573 "src/gramm.y"
     { 
                   char *temp;
                   copy_name(&temp, (yyvsp[(1) - (1)].e).val.const_str);
@@ -2446,7 +2432,7 @@ yyreduce:
   case 79:
 
 /* Line 1455 of yacc.c  */
-#line 593 "src/gramm.y"
+#line 579 "src/gramm.y"
     { 
                   symrec *rec = getsym(active_func, (yyvsp[(1) - (1)].id_name), scope);
                   if (!rec) {
@@ -2460,21 +2446,21 @@ yyreduce:
   case 80:
 
 /* Line 1455 of yacc.c  */
-#line 601 "src/gramm.y"
+#line 587 "src/gramm.y"
     { (yyval.e) = (yyvsp[(2) - (3)].e); ;}
     break;
 
   case 81:
 
 /* Line 1455 of yacc.c  */
-#line 602 "src/gramm.y"
+#line 588 "src/gramm.y"
     { (yyval.e) = (yyvsp[(1) - (1)].e); ;}
     break;
 
   case 82:
 
 /* Line 1455 of yacc.c  */
-#line 607 "src/gramm.y"
+#line 593 "src/gramm.y"
     {
                   struct func_rec *func = search_func((yyvsp[(1) - (4)].id_name));
                   if (!func)
@@ -2512,28 +2498,28 @@ yyreduce:
   case 83:
 
 /* Line 1455 of yacc.c  */
-#line 641 "src/gramm.y"
+#line 627 "src/gramm.y"
     { copy_name(&(yyval.id_name), (yyvsp[(1) - (1)].id_name)); ;}
     break;
 
   case 84:
 
 /* Line 1455 of yacc.c  */
-#line 643 "src/gramm.y"
+#line 629 "src/gramm.y"
     { (yyval.l) = (yyvsp[(1) - (1)].l); ;}
     break;
 
   case 85:
 
 /* Line 1455 of yacc.c  */
-#line 644 "src/gramm.y"
+#line 630 "src/gramm.y"
     { (yyval.l) = NULL; ;}
     break;
 
   case 86:
 
 /* Line 1455 of yacc.c  */
-#line 646 "src/gramm.y"
+#line 632 "src/gramm.y"
     {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = (yyvsp[(1) - (1)].e);
@@ -2544,7 +2530,7 @@ yyreduce:
   case 87:
 
 /* Line 1455 of yacc.c  */
-#line 652 "src/gramm.y"
+#line 638 "src/gramm.y"
     {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = (yyvsp[(1) - (3)].e);
@@ -2556,49 +2542,49 @@ yyreduce:
   case 88:
 
 /* Line 1455 of yacc.c  */
-#line 662 "src/gramm.y"
+#line 648 "src/gramm.y"
     { (yyval.e) = (yyvsp[(1) - (1)].e); ;}
     break;
 
   case 89:
 
 /* Line 1455 of yacc.c  */
-#line 663 "src/gramm.y"
+#line 649 "src/gramm.y"
     { (yyval.e) = parse_indexed_expr((yyvsp[(1) - (2)].e), (yyvsp[(2) - (2)].e)); ;}
     break;
 
   case 90:
 
 /* Line 1455 of yacc.c  */
-#line 664 "src/gramm.y"
-    { out_member_ref((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].id_name)); ;}
+#line 650 "src/gramm.y"
+    { (yyval.e) = out_member_ref((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].id_name)); ;}
     break;
 
   case 91:
 
 /* Line 1455 of yacc.c  */
-#line 665 "src/gramm.y"
+#line 651 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '!'); ;}
     break;
 
   case 92:
 
 /* Line 1455 of yacc.c  */
-#line 666 "src/gramm.y"
+#line 652 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '~'); ;}
     break;
 
   case 93:
 
 /* Line 1455 of yacc.c  */
-#line 667 "src/gramm.y"
+#line 653 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '-'); ;}
     break;
 
   case 94:
 
 /* Line 1455 of yacc.c  */
-#line 669 "src/gramm.y"
+#line 655 "src/gramm.y"
     { 
             struct expr_type e = create_const_expr("1");
             parse_expr(&(yyval.e), (yyvsp[(2) - (2)].e), e, '+');
@@ -2613,7 +2599,7 @@ yyreduce:
   case 95:
 
 /* Line 1455 of yacc.c  */
-#line 679 "src/gramm.y"
+#line 665 "src/gramm.y"
     { 
             struct expr_type e = create_const_expr("1");
             parse_expr(&(yyval.e), (yyvsp[(2) - (2)].e), e, '-');
@@ -2628,7 +2614,7 @@ yyreduce:
   case 96:
 
 /* Line 1455 of yacc.c  */
-#line 689 "src/gramm.y"
+#line 675 "src/gramm.y"
     {
             if (!is_coercible((yyvsp[(2) - (4)].type), (yyvsp[(4) - (4)].e).type))
               error("types are not coercible");
@@ -2642,7 +2628,7 @@ yyreduce:
   case 97:
 
 /* Line 1455 of yacc.c  */
-#line 698 "src/gramm.y"
+#line 684 "src/gramm.y"
     {
             /* Delayed eval */
             if (is_indexed((yyvsp[(2) - (2)].e)) || is_derefd((yyvsp[(2) - (2)].e)))
@@ -2656,140 +2642,140 @@ yyreduce:
   case 98:
 
 /* Line 1455 of yacc.c  */
-#line 706 "src/gramm.y"
+#line 692 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '*'); ;}
     break;
 
   case 99:
 
 /* Line 1455 of yacc.c  */
-#line 707 "src/gramm.y"
+#line 693 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '/'); ;}
     break;
 
   case 100:
 
 /* Line 1455 of yacc.c  */
-#line 708 "src/gramm.y"
+#line 694 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '%'); ;}
     break;
 
   case 101:
 
 /* Line 1455 of yacc.c  */
-#line 709 "src/gramm.y"
+#line 695 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '+'); ;}
     break;
 
   case 102:
 
 /* Line 1455 of yacc.c  */
-#line 710 "src/gramm.y"
+#line 696 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '-'); ;}
     break;
 
   case 103:
 
 /* Line 1455 of yacc.c  */
-#line 711 "src/gramm.y"
+#line 697 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), LSHFT_OP); ;}
     break;
 
   case 104:
 
 /* Line 1455 of yacc.c  */
-#line 712 "src/gramm.y"
+#line 698 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), RSHFT_OP); ;}
     break;
 
   case 105:
 
 /* Line 1455 of yacc.c  */
-#line 713 "src/gramm.y"
+#line 699 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '>'); ;}
     break;
 
   case 106:
 
 /* Line 1455 of yacc.c  */
-#line 714 "src/gramm.y"
+#line 700 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '<'); ;}
     break;
 
   case 107:
 
 /* Line 1455 of yacc.c  */
-#line 715 "src/gramm.y"
+#line 701 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), LE_OP); ;}
     break;
 
   case 108:
 
 /* Line 1455 of yacc.c  */
-#line 716 "src/gramm.y"
+#line 702 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), GE_OP); ;}
     break;
 
   case 109:
 
 /* Line 1455 of yacc.c  */
-#line 717 "src/gramm.y"
+#line 703 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), EQ_OP); ;}
     break;
 
   case 110:
 
 /* Line 1455 of yacc.c  */
-#line 718 "src/gramm.y"
+#line 704 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), NE_OP); ;}
     break;
 
   case 111:
 
 /* Line 1455 of yacc.c  */
-#line 719 "src/gramm.y"
+#line 705 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '|'); ;}
     break;
 
   case 112:
 
 /* Line 1455 of yacc.c  */
-#line 720 "src/gramm.y"
+#line 706 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '^'); ;}
     break;
 
   case 113:
 
 /* Line 1455 of yacc.c  */
-#line 721 "src/gramm.y"
+#line 707 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '&'); ;}
     break;
 
   case 114:
 
 /* Line 1455 of yacc.c  */
-#line 722 "src/gramm.y"
+#line 708 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), AND_OP); ;}
     break;
 
   case 115:
 
 /* Line 1455 of yacc.c  */
-#line 723 "src/gramm.y"
+#line 709 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e),  OR_OP); ;}
     break;
 
   case 116:
 
 /* Line 1455 of yacc.c  */
-#line 725 "src/gramm.y"
+#line 711 "src/gramm.y"
     { parse_assignment((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e)); (yyval.e) = (yyvsp[(1) - (3)].e); ;}
     break;
 
   case 117:
 
 /* Line 1455 of yacc.c  */
-#line 729 "src/gramm.y"
+#line 715 "src/gramm.y"
     {
               if (is_indexed((yyvsp[(2) - (3)].e)) || is_derefd((yyvsp[(2) - (3)].e)))
                 (yyval.e) = get_vector_elem((yyvsp[(2) - (3)].e));
@@ -2803,7 +2789,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 2807 "gen/y.tab.c"
+#line 2793 "gen/y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -3015,7 +3001,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 739 "src/gramm.y"
+#line 725 "src/gramm.y"
 
 
 struct bigop bigops[] = {
@@ -3116,17 +3102,12 @@ int
 out_jmp(struct expr_type *e, void *label, int type) {
   char *ltext, *cond, *name = NULL; int i = -1;
   int mf1 = 0;
-  printf("834\n");
   if (!label) {
     // 5 spaces, temporarily so that label name can be accomodated
-  printf("837\n");
-
     mf1 = 1;
     i = 0;
     while(i < MAX_NEST_DEPTH && i < patches[i])
       i++;
-  printf("843\n");
-
     if (i == MAX_NEST_DEPTH)
       error("Can't nest more than 256 levels");
 
@@ -3134,8 +3115,6 @@ out_jmp(struct expr_type *e, void *label, int type) {
     patches[i] = 1;
   }
   else {
-  printf("852\n");
-
     if (type == JUMP_LABEL_NUMBER) {
       mf1 = 1;
       make_label_text(&ltext, *((int *)label));
@@ -3146,40 +3125,23 @@ out_jmp(struct expr_type *e, void *label, int type) {
       // Jump to patch number
       mf1 = 1;
       make_patch_text(&ltext, *((int *) label));
-  printf("864\n");
-
-
     }
   }
-
-  printf("869\n");
 
   if (e) {
     cond = malloc(100 * sizeof(char));
     assign_name_to_buf(&name, *e);
     printf("Befor cond print\n");
     snprintf(cond, 100, "if ( %s == 0 )\n", name);
-  printf("877\n");
-
     printf(cond);
   }
   else 
     cond = "";
-  printf("883\n");
 
   fprintf(outfile, "%s goto %s\n", cond, ltext);
-  printf("886\n");
 
-  if (mf1)  {
-  printf("889\n");
-
-    free(ltext);
-  printf("892\n");
-
-  }
+  if (mf1) free(ltext);
   if (e) {
-  printf("890\n");
-
     free(cond);
     free(name);
   }
@@ -3226,16 +3188,12 @@ parse_unary_expr (struct expr_type *result,
       e1 = get_vector_elem(e1);
     // Check for coercibility here
     int qno = next_quad;
-    printf("911\n");
-
     make_two_quad(e1, op);
-    printf("914\n");
 
     result->ptr = QUAD_PTR; 
     result->val.quad_no = qno;
     result->type = e1.type;
     SET_NOT_DEREF((*result));
-    printf("913\n");
     // $$.type = MAX($1.type, $3.type);
 }
 
@@ -3249,18 +3207,12 @@ parse_expr (struct expr_type *result, struct expr_type e1,
     e1 = get_vector_elem(e1);
   if (is_indexed(e2) || is_derefd(e2))
     e2 = get_vector_elem(e2);
-  printf("917");
   int qno = next_quad;
   make_quad(e1, e2, op);
-  printf("920");
 
   result->ptr = QUAD_PTR; result->val.quad_no = qno;
   result->type = e1.type;
-  printf("924");
-
   SET_NOT_DEREF((*result));
-  printf("927");
-
   printf("Leaving, %c", (char)op);
   // $$.type = MAX($1.type, $3.type);
 }
@@ -3289,18 +3241,14 @@ make_quad_by_name (char *e1, char *e2, int op) {
     if (bigops[i].op == op)
       idx = i;
   }
-  printf("956\n");
   if (idx == -1) {
-        printf("958\n");
 
     fprintf(outfile, "%s = %s %c %s\n", tname, e1, (char)op, e2);
   }
   else {
-        printf("963\n");
 
     fprintf(outfile, "%s = %s %s %s\n", tname, e1, bigops[idx].str, e2);
   }
-  printf("967\n");
   return;
 }
 
@@ -3318,12 +3266,9 @@ make_quad (struct expr_type e1, struct expr_type e2, int op) {
     char *s1 = NULL, *s2 = NULL;
     assign_name_to_buf(&s1, e1);
     assign_name_to_buf(&s2, e2);   
-    printf("977\n");
     make_quad_by_name(s1, s2, op);
-    printf("979\n");
 
     free(s1); free(s2);
-    printf("982\n");
 
     return;
 }
@@ -3331,26 +3276,18 @@ make_quad (struct expr_type e1, struct expr_type e2, int op) {
 /* TODO: Change */
 struct expr_type
 out_member_ref (struct expr_type e, char *mem) {
-  printf("1052\n");
-  struct expr_type ret;
+  struct expr_type ret = e;
+  if (is_indexed(e) || is_derefd(e))
+    e = get_vector_elem(e);
   if (e.type.ttype != COMPOUND_TYPE)
     error("request for member in something not a structure or union");
-  printf("1056\n");
 
   int oft = struct_calc_offset(e.type.val.stype, mem);
   if (oft == -1)
     error("struct has no member named this");
-  printf("1061\n");
 
-  ret.type = struct_get_elem(e.type.val.stype, oft);
-  printf("1064\n");
-
-  ret.val.quad_no = next_quad;
-  ret.ptr = QUAD_PTR;
-  printf("1066\n");
-
-  out_const_index(e, oft);
-  printf("1069\n");
+  ret.deref.type = INDEX_EXPR;
+  ret.deref.idx = NULL; ret.deref.mem_oft = oft;
 
   return ret;
 }
@@ -3358,31 +3295,24 @@ out_member_ref (struct expr_type e, char *mem) {
 void
 out_vector_offset (struct expr_type e, struct expr_type idx) {
   char *const_str; char *mname = NULL; 
-  printf("1033\n");
 
   int oft_temp = next_quad;
-  printf("1036\n");
   int sz_target;
   if (is_pointer(e.type)) {
     sz_target = size_of(*e.type.val.ptr_to);
-  printf("1040\n");
   }
 
   else {
-  printf("1043\n");
 
     struct array_type *t = &e.type.array;
     sz_target = (t->size/t->dimen[0]) * base_size_of(e.type);
-  printf("1046\n");
 
   }
   int d = digits(sz_target);
   const_str = malloc(d * sizeof(int));
-  printf("1052\n");
 
   snprintf(const_str, d, "%d", sz_target);
   assign_name_to_buf(&mname, idx);
-  printf("1056\n");
 
   make_quad_by_name(mname, const_str, '*');
 
@@ -3480,7 +3410,7 @@ get_vector_elem (struct expr_type e) {
     }
     ret.type = arr_reduce_dimen(e.type);
   }
-  else {
+  else if (is_pointer(e.type)) {
     /* expr is a pointer type */
     if (is_derefd(e))
       out_deref(e);
@@ -3489,6 +3419,12 @@ get_vector_elem (struct expr_type e) {
       out_deref_by_index(e);
     }
     ret.type = *(e.type.val.ptr_to);
+  }
+  else {
+    /* Structure member ref */
+    int oft = e.deref.mem_oft;
+    out_const_index(e, oft);
+    ret.type = struct_get_elem(e.type.val.stype, oft);
   }
   return ret;
 }
@@ -3525,9 +3461,14 @@ struct expr_type
 parse_indexed_expr (struct expr_type e, struct expr_type idx) {
   struct expr_type ret;
   if (is_indexed(e)) {
-    if (e.type.array.n <= 1)
-      error("subscripted value is neither array nor pointer nor vector");
-    return compound_indexing(e, idx);
+    if (is_array(e.type)) {
+      if (e.type.array.n <= 1)
+        error("subscripted value is neither array nor pointer nor vector");
+      return compound_indexing(e, idx);
+    }
+    else {
+      e = get_vector_elem(e);
+    }
   }
   if (is_derefd(e))
     e = get_vector_elem(e);
@@ -3543,84 +3484,75 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 int 
 sout_expr_with_deref (char *buf, struct expr_type e) {
   int t1 = next_quad; char *name = NULL;
-  printf("1201\n");
-
   assign_name_to_buf(&name, e);
   if (is_derefd(e)) {
-  printf("1205\n");
-
     return sprintf(buf, "*%s ", name);
-  printf("1208\n");
-
   }
   else if (is_indexed(e)) {
-  printf("1210, \n");
-
-    out_vector_offset(e, *(e.deref.idx));
-  printf("1215\n");
-
-    return sprintf(buf, "%s[_t%d] ", name, t1);
+    if (is_array(e.type)) {
+      out_vector_offset(e, *(e.deref.idx));
+      return sprintf(buf, "%s[_t%d] ", name, t1);
+    }
+    else {
+      return sprintf(buf, "%s[%d]", name, e.deref.mem_oft);
+    }
   }
   else {
-    printf("Name: %s\n", name);
     return sprintf(buf, "%s", name);
   }
-
 }
 
 void
 out_assign_expr (struct expr_type lval, struct expr_type rval) {
   char *assign = malloc(2 * MAX_IDENTIFIER_SIZE * sizeof(char));
   int pos = 0;
-  printf("1216\n");
+  /* Print lvalue */
   pos += sout_expr_with_deref(assign, lval);
-  printf("1218\n");
-  assign[pos++] = ' ';
-  assign[pos++] = '='; assign[pos++] = ' ';
+  assign[pos++] = ' ';  assign[pos++] = '='; assign[pos++] = ' ';
+  /* print rvalue */
   pos += sout_expr_with_deref(assign + pos, rval);
-  // assign[pos++] = '\n';
-  assign[pos] = 0;
-  printf("1223\n");
 
   fprintf(outfile, "OA: %s\n", assign);
-  printf("1226\n");
 
   free(assign);
-  printf("1229\n");
-
   return;
+}
+
+struct type
+get_target_type (struct expr_type e) {
+  if (is_indexed(e)) {
+    if (is_array(e.type))
+      return arr_reduce_dimen(e.type);
+    else /* Structures member access */
+      return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
+  }
+  else if (is_derefd(e)) 
+    return *(e.type.val.ptr_to);
+  else
+    return e.type;
+
 }
 
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
-  printf("1228\n");
   struct expr_type result; 
-  if (is_void_type(rval.type))
+  struct type lt = get_target_type(lval), rt = get_target_type(rval);
+  if (is_void_type(rt))
     error("void value not ignored as it ought to be");
-  printf("1232\n");
-
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
-  if (is_equiv(lval.type, rval.type)) {
-    printf("1237\n");
-
+  if (is_equiv(lt, rt)) {
     out_assign_expr(lval, rval);
     return;
   }
-  printf("1240\n");
-
-  if (is_coercible(lval.type, rval.type)) {
+  if (is_coercible(lt, rt)) {
     /* Warning goes here */
     out_assign_expr(lval, rval);
     return;
   } 
-  printf("1247\n");
-
-  
   /* Inconvertible, eg. incompatible types when assigning
    * to type 'float' from type 'int *' */
   error("Incompatible types for assignment");
-
 }
 
 void
@@ -3641,10 +3573,8 @@ out_return (struct expr_type *e) {
     fprintf(outfile, "return\n");
     return;
   }
-
   if (is_void_type(active_func->ret_type)) 
     warning("'return' with a value, in function returning void");
-
   else if (!is_equiv(e->type, active_func->ret_type)) {
     if (!is_coercible(e->type, active_func->ret_type))
       error("incompatible types when returning type");

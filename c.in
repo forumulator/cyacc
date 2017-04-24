@@ -1,6 +1,8 @@
 
 struct bst {
 	int t;
+	int u;
+	int v;
 };
 
 int func(int x) {
@@ -32,9 +34,9 @@ int func(int x) {
 int nujh() {
 	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
 	int c;
-	int gt[4][5];
-	a = gt[2][3];
-	
+	struct bst b2;
+	b2.v = 4;
+	b = b2.v;
 	b = !a + 2;
 
 	while (a < 10)

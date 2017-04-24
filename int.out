@@ -47,42 +47,40 @@ _t17 = 4 * _t16
 _t18 = 2 + _t17
 a = _t18
 b = 5
-_t19 = 2 * 5
-_t20 = 3 + _t20
-_t21 = _t20 * 4
-OA: a = gt[_t21] 
-_t22 = ! a 
-_t23 = _t22 + 2
-OA: b = _t23
-_t24 = a < 10
-_L10: if ( _t24 == 0 )
+OA: b2[8] = 4
+OA: b = b2[8]
+_t19 = ! a 
+_t20 = _t19 + 2
+OA: b = _t20
+_t21 = a < 10
+_L10: if ( _t21 == 0 )
  goto _L12   
-_t25 = b == 6
-if ( _t25 == 0 )
+_t22 = b == 6
+if ( _t22 == 0 )
  goto _L11   
  goto _L12   
 _L11:  goto _L10
-_L12: done: _t26 = a + 1
-a = _t26
-_t27 = a == 5
-if ( _t27 == 0 )
+_L12: done: _t23 = a + 1
+a = _t23
+_t24 = a == 5
+if ( _t24 == 0 )
  goto _L16   
-_t28 = b < 4
-if ( _t28 == 0 )
+_t25 = b < 4
+if ( _t25 == 0 )
  goto _L13   
-_t29 = ! c 
-if ( _t29 == 0 )
+_t26 = ! c 
+if ( _t26 == 0 )
  goto _L13   
-_t30 = a + 2
-OA: a = _t30
+_t27 = a + 2
+OA: a = _t27
  goto _L13   
 _L13: OA: a = 10
 _L14: _L15: _L16: OA: b = c
 param b
 param _result
 call func, 1
-_t31 = _result
-OA: c = _t31
+_t28 = _result
+OA: c = _t28
  goto done
 FUNCTION END
 

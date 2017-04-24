@@ -111,6 +111,7 @@ union expr_val {
 struct deref_info {
   int type;
   struct expr_type *idx; /* Stores expression for the index of [idx] */
+  int mem_oft; /* Stores member offset for struct member access */
 };
 
 struct expr_type {

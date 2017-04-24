@@ -34,6 +34,7 @@
 
 #define SIZEOFPTR 4
 
+#define is_struct(x) ((x).ttype == COMPOUND_TYPE)
 #define is_array(x) ((x).array.n > 0)
 #define is_pointer(x) ((x).ttype == PTR_TYPE)
 #define is_int_type(t) ((t).ttype == BASIC_TYPE && ((t).val.btype == INT_TYPE || (t).val.btype == CHAR_TYPE))
