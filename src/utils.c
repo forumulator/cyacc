@@ -81,6 +81,12 @@ int
 const_type (char *const_str) {
     /* TODO: Maybe set the type
     * from the lexer itself */
+    int i = 0;
+    while (const_str[i]) {
+      if (const_str[i] == '.')
+        return FLOAT_TYPE;
+      i++;
+    }
     return INT_TYPE;
 }
 

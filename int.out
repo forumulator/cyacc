@@ -47,46 +47,46 @@ _t17 = 4 * _t16
 _t18 = 2 + _t17
 a = _t18
 b = 5
-_t19 = 2 * 10
+_L10: _t19 = 2 * 10
 _t20 = 3 + _t19
 _t21 = _t20 * 100
 _t22 = 4 + _t21
 _t23 = _t22 * 4
-if ( _t23 < 20000 ) goto _L10
+if ( _t23 < 20000 ) goto _L11
 exit 1
-_L10: OA: c = at[_t23] 
+_L11: OA: c = at[_t23] 
 _t24 = 2 * 10
 _t25 = 3 + _t24
 _t26 = _t25 * 100
 _t27 = 4 + _t26
 _t28 = _t27 * 4
-if ( _t28 < 20000 ) goto _L11
+if ( _t28 < 20000 ) goto _L12
 exit 1
-_L11: OA: at[_t28]  = c
+_L12: OA: at[_t28]  = c
 _t29 = a < 10
-_L12: if ( _t29 == 0 )
- goto _L14   
+_L13: if ( _t29 == 0 )
+ goto _L15   
 _t30 = b == 6
 if ( _t30 == 0 )
- goto _L13   
  goto _L14   
-_L13:  goto _L12
-_L14: done: _t31 = a + 1
+ goto _L15   
+_L14:  goto _L13
+_L15: done: _t31 = a + 1
 a = _t31
 _t32 = a == 5
 if ( _t32 == 0 )
- goto _L18   
+ goto _L19   
 _t33 = b < 4
 if ( _t33 == 0 )
- goto _L15   
+ goto _L16   
 _t34 = ! c 
 if ( _t34 == 0 )
- goto _L15   
+ goto _L16   
 _t35 = a + 2
 OA: a = _t35
- goto _L15   
-_L15: OA: a = 10
-_L16: _L17: _L18: OA: b = c
+ goto _L16   
+_L16: OA: a = 10
+_L17: _L18: _L19: OA: b = c
 param b
 param _result
 call func, 1
