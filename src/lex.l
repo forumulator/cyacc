@@ -182,3 +182,4 @@ int check_type()
 
 	return(IDENTIFIER);
 }
+

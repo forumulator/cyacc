@@ -235,35 +235,35 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   int mf = 0; int pos = 0; char *name;
 
   if (!*buf) {
-    printf("NOT *buf");
+    // printf("NOT *buf");
     *buf = malloc(MAX_IDENTIFIER_SIZE * sizeof(char));
     name = *buf;
   }
   else 
     name = (int *)buf;
 
-  printf("238\n");
+  // printf("238\n");
 
   
   // if (is_derefd(e))
   //   name[pos++] = '*';
 
   if (e.ptr == CONST_PTR) {
-    printf("245\n");
+    // printf("245\n");
     pos += cstrcpy(name + pos, e.val.const_str) - 1;
-    printf("245\n");
+    // printf("245\n");
   }
   else if (e.ptr == QUAD_PTR) {
-    printf("249\n");
+    // printf("249\n");
     mf = 1;
     temp_var_name(e.val.quad_no, name + pos);
     pos += digits(e.val.quad_no) + 1;
-    printf("253\n");
+    // printf("253\n");
   }
   else {
-    printf("255\n");
+    // printf("255\n");
     pos += cstrcpy(name + pos, (e.val.sym)->name) - 1;
-    printf("258\n");
+    // printf("258\n");
   }
 
   /* if e is indexed, then this will be a[idx] */
@@ -273,9 +273,9 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   //   pos += assign_name_to_buf((int **)(name + pos), *e.array.idx);
   //   name[pos++] = ']';
   // }
-  printf("Befor access\n");
-  name[pos] = '\0';
-  printf("After access\n");
+  // printf("Befor access\n");
+  name[pos + 1] = '\0';
+  // printf("After access\n");
   return pos;
 }
 
@@ -324,5 +324,61 @@ void print_type(struct type t) {
       p = p->val.ptr_to;
     else
       p = NULL;
+  }
+}
+
+void fprint_type(FILE *tfile, struct type t) {
+  struct type *p = &t;
+  while (p) {
+    if (p->ttype == BASIC_TYPE)
+      fprintf(tfile, "(B_T, %d, %d) -> ", p->val.btype, is_array(*p));
+    else if (p->ttype == COMPOUND_TYPE)
+      fprintf(tfile, "(C_T, %s, %d) -> ", p->val.stype->name, is_array(*p));
+    else
+      fprintf(tfile, "(P_T, %d) -> ", is_array(*p));
+
+    if (p->ttype == PTR_TYPE)
+      p = p->val.ptr_to;
+    else
+      p = NULL;
+  }
+}
+
+
+void dump_tables() {
+  dump_sym_tables();
+  // dump_struct_table();
+  // dump_alias_table();
+}
+
+void dump_sym_tables() {
+  const char *DUMP_FILE = "sym_tables.txt";
+  printf("DUMPING");
+  FILE *tfile = fopen(DUMP_FILE, "w");
+  if (!tfile) {
+    printf("Unable to open file %s", DUMP_FILE);
+    return;
+  }
+  struct list *node;
+  for (node = func_table; node; node = node->next) {
+    struct func_rec *func = (struct func_rec *)node->data;
+    printf("DUMPING@@@@\n");
+    fprintf(tfile, "================ FUNCTION: %s, LABEL:%d, RET_TYPE: ", func->name, func->label);
+    fprint_type(tfile, func->ret_type);
+    fprintf(tfile, "\n" );
+    dump_table (tfile, func->sym_table);
+    fprintf(tfile, "\n\n");
+  }
+}
+
+
+void dump_table (FILE *tfile, struct list *sym_table) {
+  symrec *sym;
+  struct list *node; 
+  for (node = sym_table; node; node = node->next) {
+    sym = (symrec *)node->data;
+    fprintf(tfile, "%s, %d, %d:, ", sym->name, sym->scope.level, sym->scope.label);
+    fprint_type(tfile, sym->type);
+    fprintf(tfile, "\n");
   }
 }

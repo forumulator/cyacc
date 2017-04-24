@@ -3,6 +3,7 @@
 #endif
 
 #define _UTILS
+#include <stdio.h>
 
 // NEVER make a list with automatic 
 // node variables, always malloc
@@ -43,3 +44,8 @@ int digits (int num);
 int cstrcpy (char *dest, char *src);
 
 void print_type(struct type t);
+
+void dump_tables();
+void dump_sym_tables();
+void dump_table (FILE *tfile, struct list *sym_table);
+void dump_struct_table ();

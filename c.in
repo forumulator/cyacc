@@ -1,60 +1,159 @@
 
+struct node
+{
+	int a;
+	int b;
+	int c;
+
+};
+
+struct bst1 {
+  int i;
+  int j;
+};
+
+
 struct bst {
 	int t;
 	int u;
 	int v;
+	struct node nd;
 };
 
-int func(int x) {
-	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
-	int c = a;
+
+typedef struct bst lol;
+
+int func3(int x[5]	) {
 	
-	b = !a + 2;
+}
 
-	while (a < 10)
-	if (b == 6)
-		break;
-	done: ++a;
+float func(int s,int n,float a)
+{	
 
-	if (a == 5)
-	if (b < 4)
-		if (!c)
-			a = a + 2;
-	else
-		a = 10;
 
-	b = c;
+  struct bst b1[4], *b2;
+  int *y4;
+  b2 = y4;
+	struct bst b;
+	b.t = b.u + 5;
+	b2 = b1[5];
 
-	goto done;
-	return (c + a) * 2;
+	while(n)
+	{	
+	float j = 0.01;
+		if(a*s+j == 0.53)
+			break;	
+		--n;
+		++j;
+	}	
+
+	if(n==0)
+		{
+		int k;
+		k = k + 1;
+		return 0.21;
+		}	
+	return 0.15;	
 }
 
 
+void test_array_of_structures()
+{
+	struct bst arr[100];
+	lol brr[100];
 
-int nujh() {
-	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
-	int c;
-	{
-		int at[5][10][100];
-		c = at[2][3][4];
-		at[2][3][4] = c;
-	}
-	
+	brr[50] = arr[50];
 
-	while (a < 10)
-	if (b == 6)
-		break;
-	done: ++a;
+	/* brr[51] = arr[51.1] */
+}
 
-	if (a == 5)
-	if (b < 4)
-		if (!c)
-			a = a + 2;
+
+void dont_do_anything()
+{}
+
+
+char give_next(char a)
+{
+	if(a!='z')
+		return a + 1;
 	else
-		a = 10;
+		return 'a';	
+}
 
-	b = c;
-	c = func(b);
 
-	goto done;
+float square_root (float s)
+{
+	float l = 0, h = s;
+	float m;
+
+	while(l<h)
+	{
+		m = (l+h)/2;
+
+		if(m*m<s)
+			h = m;
+		else
+			l = m;	
+	}	
+
+	return l;
+}
+
+int xor()
+{
+	int i = 0;
+	int arr[100];
+
+	i = 100;
+
+	while(i)
+	{	
+		i = i - 1;
+		arr[i] = i;
+	}
+
+	int j;
+	i = 100;
+	j = 100;
+
+	while(i)
+	{
+		i = i - 1;
+		while(j)
+			{
+				j = j - 1;
+				arr[i] = arr[i] * arr[j];
+			}
+	}
+
+	return arr[0];	
+
+}
+
+
+int main()
+{
+	int *y5;int y4;
+	func3(5);
+	int ans = func(1,15,'a') + 2;	
+	
+	int u = 0;
+
+	while(u<100)
+		{
+			u = u + 1;
+		}	
+
+	dont_do_anything();	
+
+	lol ll;
+
+	struct bst mm;
+
+	mm  = ll;
+
+	u = 11 + u;
+
+	char uu = give_next('s');
+
 }

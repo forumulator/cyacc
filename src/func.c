@@ -7,7 +7,9 @@
 
 struct list *func_table;
 
+
 void print_sym_table(struct list *sym_table) {
+
 	struct list *node = sym_table;
 	symrec * rec;
 	printf("Symbol Tabl\n");
@@ -62,8 +64,8 @@ symrec *
 putsym (struct func_rec *active_func, char *sym_name, 
     struct type sym_type, struct scope_type scope)
 {
-	printf("in putsym");
-  	printf("%d\n", active_func);
+	// printf("in putsym");
+  	// printf("%d\n", active_func);
 
   struct list *sym_table;
  
@@ -101,6 +103,7 @@ getsym (struct func_rec *active_func,
     for (node = sym_table; node; node = node->next) {
       ptr = (symrec *)node->data;
         // Check scoping rules too
+      // printf("Name: %s, %d\n", ptr->name, scope.level);
       if (!ptr->scope.over && ptr->scope.level <= scope.level
           && scope.level > larg && !strcmp (ptr->name,sym_name)) {
         ret = ptr;
@@ -111,17 +114,19 @@ getsym (struct func_rec *active_func,
   if (ret)
     return ret;
 
+  // printf("NAme,%s\n", sym_name);
   sym_table = global_sym_table;
   for (node = sym_table; node; node = node->next) {
+    // printf("In the thing=========================\n");
     ptr = (symrec *)node->data;
       // Check scoping rules too
-    printf("%s, %s\n", ptr->name, sym_name);
+    // printf("%s, %s\n", ptr->name, sym_name);
 
     if (!strcmp (ptr->name, sym_name))
       return ptr;
   }
 
-  printf("ret NULL");
+// ?("ret NULL");
   
   return NULL;
 

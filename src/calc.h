@@ -154,4 +154,3 @@ struct memb_list *create_member (char *name, struct memb_list *join);
 
 int size_of (struct type t);
 int base_size_of (struct type t);
-

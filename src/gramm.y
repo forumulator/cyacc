@@ -124,8 +124,8 @@ struct type *alias_type;
 %%
 
 
-input :   /* empty */
-      | input global_statement
+input :   /* empty */ { dump_tables(); }
+      | global_statement input 
       ;
 
 global_statement  :  declaration_statement {}
@@ -149,7 +149,7 @@ body_statement    : declaration_statement {}
                   ;
 
 // User defined label
-label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s: ", $1); }
+label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s:  ", $1); }
           ;
 
 return_statement  : RETURN expr ';' { out_return(&$2); }
@@ -161,7 +161,6 @@ return_statement  : RETURN expr ';' { out_return(&$2); }
 function_definition  : func_head block_statement 
             {
               active_func = NULL;
-              scope.level--;
               out_end_func();  
             }
             ;
@@ -246,6 +245,7 @@ begin_sub :   /* eps */
                 // Push scope info onto stack
                 list_prepend_elem(&nested, 
                   list_create_elem((void *)label_no));
+                // printf("lvl: %d\n", scope.level);
                 scope.level++;
                 out_label();
               }
@@ -255,6 +255,8 @@ end_sub   :   /* eps */
               {
                 void *data = list_pop_front(&nested);
                 scope.label = (int) data;
+                // printf("lvle: %d\n", scope.level);
+
                 // delsym_scope(scope.level);
                 scope.level--;
               }
@@ -270,7 +272,6 @@ type_definition : aliasing ';'
 /* TODO: Check for duplicate members */
 compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
                     { 
-                      printf("nam1e %s\n", $2);
                       if (get_struct($2))
                         error("Redefinition of struct");
                       /* TODO: Differentiate b/w STRUCT and
@@ -284,7 +285,6 @@ compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
                     }
                 | type_type ctype_name
                   {
-                    printf("name2 %s\n", $2);
 
                     struct struct_type *s = get_struct($2);
                     if (!s)  {
@@ -308,7 +308,6 @@ type_type : STRUCT { $$ = STRUCT_TAG; }
 ctype_name  : IDENTIFIER 
               {
                 copy_name(&$$, $1);
-                printf("%s\n", $$);
               }
             ;
 
@@ -379,7 +378,6 @@ expression_statement  :  expr ';'
 
 jump_statement  : CONTINUE ';'
                   { 
-                    printf("%d", cur_loop.label);
                     if (cur_loop.label == -1)
                       error("continue statement not within a loop");
                     out_jmp(NULL, &cur_loop.label, JUMP_LABEL_NUMBER); 
@@ -435,7 +433,6 @@ selection_statement  :  if_clause body_statement {
 if_clause   : IF '(' expr ')' {
                 // returns patch number
                 $$ = out_jmp(&$3, (void *)NULL, 0);
-                printf("If clause done\n");
               }
             ;
 
@@ -474,7 +471,6 @@ declaration_statement : type_name var_dlist ';'
                               // Set the type of the last node to the basic
                               // or compound type that is type_name
                               if (t->ttype == INCOMPL_TYPE) {
-                                printf("Yes, setting");
                                 *t = $1;
                               }                              
                             }
@@ -487,7 +483,7 @@ declaration_statement : type_name var_dlist ';'
                         }
                       ;
           
-var_dlist : var_definition ',' var_dlist { printf("Entering var_dlist"); list_prepend_elem(&$3, $1); $$ = $3; printf("Leaving var_dlist") }
+var_dlist : var_definition ',' var_dlist {list_prepend_elem(&$3, $1); $$ = $3; }
           | var_definition { $$ = $1; }
           ;
 
@@ -567,7 +563,7 @@ type_name : INT { $$ = basic_types[INT_TYPE].t; }
           | ALIAS_NAME { $$ = *$1; }
           ;
 
-opt_init  :  '=' expr   { printf("In opt_init"); $$ = $2; }
+opt_init  :  '=' expr   { $$ = $2; }
           | /* empty */ { $$.type.ttype = UNDEF_TYPE; }
         ;
 
@@ -658,7 +654,6 @@ expr    : primary_expr { $$ = $1; }
             struct expr_type e = create_const_expr("1");
             parse_expr(&$$, $2, e, '+');
             if ($2.ptr != SYM_PTR) {
-              printf("%d\n", $2.type);
               error("lvalue required as increment operand");
             }
             out_assign($2.val.sym->name, $$);
@@ -686,7 +681,6 @@ expr    : primary_expr { $$ = $1; }
           {
             /* Delayed eval */
             if (is_indexed($2) || is_derefd($2)) {
-              printf("derf yes\n");
               $2 = get_vector_elem($2);
             }
             $$ = $2;
@@ -747,7 +741,6 @@ struct bigop bigops[] = {
 int
 main ()
 {
-  printf("In main");
   /* TODO: Parse args properly */
   outfile = fopen(DEFAULT_OUT, "w+");
   if (!outfile) {
@@ -808,7 +801,7 @@ out_assign(char *name, struct expr_type expr) {
   char *s = NULL;
   assign_name_to_buf(&s, expr);
 
-  fprintf(outfile, "%s = %s\n", name, s);
+  fprintf(outfile, "\t %s = %s\n", name, s);
 
   free(s);
   return;
@@ -858,14 +851,12 @@ out_jmp(struct expr_type *e, void *label, int type) {
   if (e) {
     cond = malloc(100 * sizeof(char));
     assign_name_to_buf(&name, *e);
-    printf("Befor cond print\n");
-    snprintf(cond, 100, "if ( %s == 0 )\n", name);
-    printf(cond);
+    snprintf(cond, 100, "if ( %s == 0 )", name);
   }
   else 
     cond = "";
 
-  fprintf(outfile, "%s goto %s\n", cond, ltext);
+  fprintf(outfile, "\t %s\n\t goto %s\n", cond, ltext);
 
   if (mf1) free(ltext);
   if (e) {
@@ -873,7 +864,6 @@ out_jmp(struct expr_type *e, void *label, int type) {
     free(name);
   }
 
-  printf("returning\n");
 
   return i;
 }
@@ -886,7 +876,6 @@ void backpatch(int label, int patch) {
 
   make_label_text(&ltext, label);
   fseek(outfile, 0, SEEK_SET);
-  printf("before loop%d\n", ftell(outfile));
   while ((c = getc(outfile)) != EOF) {
     if (c != '$')
       continue;
@@ -899,7 +888,6 @@ void backpatch(int label, int patch) {
     }
     fseek(outfile, temp_pos, SEEK_SET);
   } 
-  printf("after loop\n");
 
 
   fseek(outfile, cur_pos, SEEK_SET);
@@ -928,19 +916,26 @@ parse_unary_expr (struct expr_type *result,
 void
 parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op) {
-  printf("Entering parse_expr");
     // Check for coercibility here
-  if (is_indexed(e1) || is_derefd(e1))
+  // printf("918\n");
+  if (is_indexed(e1) || is_derefd(e1)) {
+    // printf("920\n");
     e1 = get_vector_elem(e1);
-  if (is_indexed(e2) || is_derefd(e2))
+  }
+  if (is_indexed(e2) || is_derefd(e2)) {
+    // printf("924\n");
     e2 = get_vector_elem(e2);
+  }
+  // printf("923\n");
   int qno = next_quad;
+  // printf("t: %d\n", e1.val.quad_no);
   make_quad(e1, e2, op);
-
+  // printf("926\n");
   result->ptr = QUAD_PTR; result->val.quad_no = qno;
   result->type = e1.type;
+  // printf("type: %d\n", e1.type.ttype);
+  // printf("929\n");
   SET_NOT_DEREF((*result));
-  printf("Leaving, %c", (char)op);
   // $$.type = MAX($1.type, $3.type);
 }
 
@@ -952,7 +947,7 @@ make_two_quad (struct expr_type e1, int op) {
     char *s1 = NULL;
     assign_name_to_buf(&s1, e1);
 
-    fprintf(outfile, "%s = %c %s \n", tname, (char)op, s1);
+    fprintf(outfile, "\t %s = %c %s \n", tname, (char)op, s1);
     next_quad++;
 
     free(s1);
@@ -963,18 +958,17 @@ void
 make_quad_by_name (char *e1, char *e2, int op) {
   char tname[10]; temp_var_name(next_quad++, tname);
   int i, idx = -1;
-  printf("OP:%d\n", op);
   for (i = 0; i < BIGOPS_NUM; ++i) {
     if (bigops[i].op == op)
       idx = i;
   }
   if (idx == -1) {
 
-    fprintf(outfile, "%s = %s %c %s\n", tname, e1, (char)op, e2);
+    fprintf(outfile, "\t %s = %s %c %s\n", tname, e1, (char)op, e2);
   }
   else {
 
-    fprintf(outfile, "%s = %s %s %s\n", tname, e1, bigops[idx].str, e2);
+    fprintf(outfile, "\t %s = %s %s %s\n", tname, e1, bigops[idx].str, e2);
   }
   return;
 }
@@ -993,6 +987,7 @@ make_quad (struct expr_type e1, struct expr_type e2, int op) {
     char *s1 = NULL, *s2 = NULL;
     assign_name_to_buf(&s1, e1);
     assign_name_to_buf(&s2, e2);   
+    // printf("%s, %s\n", s1, s2);
     make_quad_by_name(s1, s2, op);
 
     free(s1); free(s2);
@@ -1061,10 +1056,10 @@ out_index (struct expr_type e) {
 
   temp_var_name(next_quad++, tname);
   temp_var_name(oft_temp, oft_name);
-  fprintf(outfile, "if ( %s < %d ) goto _L%d\n", oft_name, sym->type.array.size * base_size_of(sym->type), label_no);
-  fprintf(outfile, "exit 1\n");
+  fprintf(outfile, "\t if ( %s < %d ) goto _L%d\n", oft_name, sym->type.array.size * base_size_of(sym->type), label_no);
+  fprintf(outfile, "\t exit 1\n");
   out_label();
-  fprintf(outfile, "%s = %s [%s]\n", tname, name, oft_name);
+  fprintf(outfile, "\t %s = %s [%s]\n", tname, name, oft_name);
 
   free(name);
 }
@@ -1073,13 +1068,17 @@ void
 out_const_index (struct expr_type e, const int c) {
   /* TODO: Take care of sizes (10 here) by allocating
    * global buffers maybe */
+  // printf("c: %d\n", c);
   char *name = NULL;
   assign_name_to_buf(&name, e);
+  // printf("1069\n");
   struct type *t = &e.type;
-  int oft = (t->array.size / t->array.dimen[0]) * base_size_of(*t);
+  // printf("1071\n");
+  // int oft = (t->array.size / t->array.dimen[0]) * base_size_of(*t);
+  // printf("1073\n");
   // struct type redd = out_index(e, create_const_expr(const_str));
-  fprintf(outfile, "_t%d = %s[%d]", next_quad++, name, c);
-
+  fprintf(outfile, "\t _t%d = %s[%d]\n", next_quad++, name, c);
+  // printf("1076\n");
   free(name);
   return;
 }
@@ -1092,7 +1091,7 @@ out_deref (struct expr_type e) {
   temp = malloc(10 * sizeof(char));
   temp_var_name(next_quad++, temp);
 
-  fprintf(outfile, "%s = * %s\n", temp, name);
+  fprintf(outfile, "\t %s = * %s\n", temp, name);
 
   free(temp);  free(name);
 }
@@ -1133,9 +1132,13 @@ get_vector_elem (struct expr_type e) {
   ret.ptr = QUAD_PTR;
   ret.val.quad_no = next_quad; 
   if (is_array(e.type)) {
-    if (is_derefd(e)) 
+    if (is_derefd(e)) {
+      // printf("1127\n");
       out_const_index(e, 0);
+      // printf("1129\n");
+    }
     else {
+      // printf("918\n");
       out_index(e);
       ret.val.quad_no++;
     }
@@ -1152,10 +1155,15 @@ get_vector_elem (struct expr_type e) {
     ret.type = *(e.type.val.ptr_to);
   }
   else {
+    // printf("1149\n");
     /* Structure member ref */
     int oft = e.deref.mem_oft;
     out_const_index(e, oft);
+    // printf("1153\n");
+    // printf("Oftt: %d\n", oft);
     ret.type = struct_get_elem(e.type.val.stype, oft);
+    // printf("type: %d\n", ret.type.ttype);
+    // printf("1155\n");
   }
   return ret;
 }
@@ -1163,10 +1171,8 @@ get_vector_elem (struct expr_type e) {
 void out_label () {
   char *ltext; 
   make_label_text(&ltext, label_no++);
-  printf("In outlabel %d\n", label_no - 1);
-  fprintf(outfile, "%s: ", ltext);
+  fprintf(outfile, "%s: \n", ltext);
   free(ltext);
-  printf("At end\n");
 }
 
 
@@ -1216,10 +1222,8 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 int 
 sout_expr_with_deref (char *buf, struct expr_type e) {
   int t1 = next_quad; char *name = NULL;
-  printf("Here===========\n");
   assign_name_to_buf(&name, e);
   if (is_derefd(e)) {
-    printf("===========OA': *%s\n", name);
     // exit(1);
     return sprintf(buf, "*%s ", name);
   }
@@ -1227,18 +1231,18 @@ sout_expr_with_deref (char *buf, struct expr_type e) {
     if (is_array(e.type)) {
       symrec *sym = getsym(active_func, name, scope);
       out_vector_offset(e, *(e.deref.idx));
-      fprintf(outfile, "if ( _t%d < %d ) goto _L%d\n", t1, 
+      fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
           sym->type.array.size * base_size_of(sym->type), label_no);
-      fprintf(outfile, "exit 1\n");
+      fprintf(outfile, "\t exit 1\n");
       out_label();
-      return sprintf(buf, "%s[_t%d] ", name, t1);
+      return sprintf(buf, "\t %s[_t%d] ", name, t1);
     }
     else {
-      return sprintf(buf, "%s[%d]", name, e.deref.mem_oft);
+      return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
     }
   }
   else {
-    return sprintf(buf, "%s", name);
+    return sprintf(buf, "\t %s", name);
   }
 }
 
@@ -1246,14 +1250,13 @@ void
 out_assign_expr (struct expr_type lval, struct expr_type rval) {
   char *assign = malloc(2 * MAX_IDENTIFIER_SIZE * sizeof(char));
   int pos = 0;
-  printf("is_derefd: %d", is_derefd(lval));
   /* Print lvalue */
   pos += sout_expr_with_deref(assign, lval);
   assign[pos++] = ' ';  assign[pos++] = '='; assign[pos++] = ' ';
   /* print rvalue */
   pos += sout_expr_with_deref(assign + pos, rval);
 
-  fprintf(outfile, "OA: %s\n", assign);
+  fprintf(outfile, "\t %s\n", assign);
 
   free(assign);
   return;
@@ -1263,16 +1266,14 @@ struct type
 get_target_type (struct expr_type e) {
   if (is_indexed(e)) {
     if (is_array(e.type)) {
-      printf("1256\n");      
       return arr_reduce_dimen(e.type);
     }
     else {
-      printf("1260, %d\n", e.deref.mem_oft);
+      // printf("Oft: %d", e.deref.mem_oft);
       return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
     } /* Structures member access */
   }
   else if (is_derefd(e)) {
-    printf("1265\n");
     return *(e.type.val.ptr_to);
   } 
   else
@@ -1282,29 +1283,23 @@ get_target_type (struct expr_type e) {
 
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
-  printf("1269\n");
   struct expr_type result; 
   struct type lt = get_target_type(lval), rt = get_target_type(rval);
-  printf("1272\n");
-  
+  // printf("%d: %d, %d: %d\n", lval.type.ttype, lt.val.btype, rt.ttype, rt.val.btype);
   if (is_void_type(rt))
     error("void value not ignored as it ought to be");
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
   if (is_equiv(lt, rt)) {
-  printf("1277\n");
 
     out_assign_expr(lval, rval);
-  printf("1280\n");
 
     return;
   }
   if (is_coercible(lt, rt)) {
     /* Warning goes here */
-  printf("1286\n");
 
     out_assign_expr(lval, rval);
-  printf("1289\n");
 
     return;
   } 
@@ -1328,7 +1323,7 @@ out_return (struct expr_type *e) {
   if (!e) {
     if (!is_void_type(active_func->ret_type))
       warning("'return' with no value, in function returning non-void");
-    fprintf(outfile, "return\n");
+    fprintf(outfile, "\t return\n");
     return;
   }
   if (is_void_type(active_func->ret_type)) 
@@ -1339,7 +1334,7 @@ out_return (struct expr_type *e) {
   }
 
   char *name = NULL; assign_name_to_buf(&name, *e);
-  fprintf(outfile, "return %s\n", name);
+  fprintf(outfile, "\t return %s\n", name);
 
   free(name);
 }
@@ -1350,17 +1345,17 @@ out_param (struct expr_type e) {
   char *name = NULL;
   assign_name_to_buf(&name, e);
 
-  fprintf(outfile, "param %s\n", name);
+  fprintf(outfile, "\t param %s\n", name);
   free(name);
 }
 
 void
 out_call (struct func_rec *f) {
   if (!is_void_type(f->ret_type))
-    fprintf(outfile, "param _result\n");
-  fprintf(outfile, "call %s, %d\n", f->name, f->num_param);
+    fprintf(outfile, "\t param _result\n");
+  fprintf(outfile, "\t call %s, %d\n", f->name, f->num_param);
   if (!is_void_type(f->ret_type))
-    fprintf(outfile, "_t%d = _result\n", next_quad++);
+    fprintf(outfile, "\t _t%d = _result\n", next_quad++);
 
   return;
 }

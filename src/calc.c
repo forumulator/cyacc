@@ -43,7 +43,7 @@ struct struct_type
 *create_struct (char *name, struct memb_list* elems, int incompl) { 
   struct struct_type *ss = malloc(sizeof(struct struct_type));
   copy_name(&ss->name, name);
-  printf("Creating a struct with name %s\n", name);
+  // printf("Creating a struct with name %s\n", name);
   int size = 0;
   struct memb_list *node = elems;
   while (node) {
@@ -84,25 +84,29 @@ struct struct_type
       return s;
     node = node->next;
   }
-  printf("Struct not found");
+  // printf("Struct not found");
   // No match
   return NULL;
 }
 
 // Get element by offset
+// Get element by offset
 struct type 
 struct_get_elem (struct struct_type *stype, int oft) {
   struct memb_list *node = stype->elems;
-  int count = 1;
+  int count = 0;
   while (node) {
-    if (oft == count++)
+    if (oft == count)
       return node->type;
+    // printf("c: %d, ", count);
+    count += size_of(node->type);
     node = node->next;
   }
-
+  printf("\n");
   struct type t; t.ttype = UNDEF_TYPE;
   return t;
 }
+  
 
 int 
 struct_calc_offset (struct struct_type *stype, char *name) {
