@@ -473,12 +473,15 @@ declaration_statement : type_name var_dlist ';'
                                 t = t->val.ptr_to;
                               // Set the type of the last node to the basic
                               // or compound type that is type_name
-                              if (t->ttype == INCOMPL_TYPE)
+                              if (t->ttype == INCOMPL_TYPE) {
+                                printf("Yes, setting");
                                 *t = $1;
+                              }                              
                             }
                             sym->type.array = arr;
+                            print_type(sym->type);
                             // TODO: Relloc in the entire ptr_to linked list
-                            sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
+                            // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
                             node = node->next;
                           }
                         }
@@ -496,11 +499,10 @@ var_definition  : symbol_name opt_init
                       error("Redefinition of symbol");
                     }
 
+                    print_type($1.type);
                     rec = putsym(active_func, $1.name, $1.type, scope);
 
                     $$ = list_create_elem(rec);  
-
-                    
                     // Assign result of expr to vaiable
                     // This is should be delayed to after the 
                     // type backpatch to check coercibility
@@ -683,10 +685,15 @@ expr    : primary_expr { $$ = $1; }
         | '*' expr %prec DEREF
           {
             /* Delayed eval */
-            if (is_indexed($2) || is_derefd($2))
-              $$ = get_vector_elem($2);
-            if (!is_array($$.type) && !is_pointer($$.type))
+            if (is_indexed($2) || is_derefd($2)) {
+              printf("derf yes\n");
+              $2 = get_vector_elem($2);
+            }
+            $$ = $2;
+            if (!is_array($2.type) && !is_pointer($2.type))
               error("Attempting to dereference non-pointer");
+            SET_NOT_DEREF($$);
+            $$.deref.type = DEREF_EXPR;
             /* deref'd whenever used */
           }
         | expr '*' expr  { parse_expr(&$$, $1, $3, '*'); }
@@ -1050,9 +1057,13 @@ out_index (struct expr_type e) {
   char tname[10], oft_name[10]; 
   assign_name_to_buf(&name, e);
 
+  symrec *sym = getsym(active_func, name, scope);
+
   temp_var_name(next_quad++, tname);
   temp_var_name(oft_temp, oft_name);
-
+  fprintf(outfile, "if ( %s < %d ) goto _L%d\n", oft_name, sym->type.array.size * base_size_of(sym->type), label_no);
+  fprintf(outfile, "exit 1\n");
+  out_label();
   fprintf(outfile, "%s = %s [%s]\n", tname, name, oft_name);
 
   free(name);
@@ -1162,17 +1173,18 @@ void out_label () {
 struct expr_type
 compound_indexing (struct expr_type e, struct expr_type idx) {
   struct expr_type ret = e;
-  int incr_size = e.type.array.size/e.type.array.dimen[0];
+  int incr_size = e.type.array.dimen[1];
   char const_str[MAX_INT_SIZE];  snprintf(const_str, MAX_INT_SIZE, "%d", incr_size);
-
+  int t = next_quad;
   make_quad_with_const(*(e.deref.idx), const_str, '*');
-  int t = next_quad; char temp[20];
+  char temp[20];
   temp_var_name(t, temp);
+  int final_quad = next_quad;
   make_quad_with_const(idx, temp, '+');
 
   ret.type = arr_reduce_dimen(ret.type);
   ret.deref.idx->ptr = QUAD_PTR;
-  ret.deref.idx->val.quad_no = t;
+  ret.deref.idx->val.quad_no = final_quad;
 
   return ret;
 }
@@ -1204,13 +1216,21 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 int 
 sout_expr_with_deref (char *buf, struct expr_type e) {
   int t1 = next_quad; char *name = NULL;
+  printf("Here===========\n");
   assign_name_to_buf(&name, e);
   if (is_derefd(e)) {
+    printf("===========OA': *%s\n", name);
+    // exit(1);
     return sprintf(buf, "*%s ", name);
   }
   else if (is_indexed(e)) {
     if (is_array(e.type)) {
+      symrec *sym = getsym(active_func, name, scope);
       out_vector_offset(e, *(e.deref.idx));
+      fprintf(outfile, "if ( _t%d < %d ) goto _L%d\n", t1, 
+          sym->type.array.size * base_size_of(sym->type), label_no);
+      fprintf(outfile, "exit 1\n");
+      out_label();
       return sprintf(buf, "%s[_t%d] ", name, t1);
     }
     else {
@@ -1226,6 +1246,7 @@ void
 out_assign_expr (struct expr_type lval, struct expr_type rval) {
   char *assign = malloc(2 * MAX_IDENTIFIER_SIZE * sizeof(char));
   int pos = 0;
+  printf("is_derefd: %d", is_derefd(lval));
   /* Print lvalue */
   pos += sout_expr_with_deref(assign, lval);
   assign[pos++] = ' ';  assign[pos++] = '='; assign[pos++] = ' ';
@@ -1241,13 +1262,19 @@ out_assign_expr (struct expr_type lval, struct expr_type rval) {
 struct type
 get_target_type (struct expr_type e) {
   if (is_indexed(e)) {
-    if (is_array(e.type))
+    if (is_array(e.type)) {
+      printf("1256\n");      
       return arr_reduce_dimen(e.type);
-    else /* Structures member access */
+    }
+    else {
+      printf("1260, %d\n", e.deref.mem_oft);
       return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
+    } /* Structures member access */
   }
-  else if (is_derefd(e)) 
+  else if (is_derefd(e)) {
+    printf("1265\n");
     return *(e.type.val.ptr_to);
+  } 
   else
     return e.type;
 
@@ -1255,19 +1282,30 @@ get_target_type (struct expr_type e) {
 
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
+  printf("1269\n");
   struct expr_type result; 
   struct type lt = get_target_type(lval), rt = get_target_type(rval);
+  printf("1272\n");
+  
   if (is_void_type(rt))
     error("void value not ignored as it ought to be");
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
   if (is_equiv(lt, rt)) {
+  printf("1277\n");
+
     out_assign_expr(lval, rval);
+  printf("1280\n");
+
     return;
   }
   if (is_coercible(lt, rt)) {
     /* Warning goes here */
+  printf("1286\n");
+
     out_assign_expr(lval, rval);
+  printf("1289\n");
+
     return;
   } 
   /* Inconvertible, eg. incompatible types when assigning

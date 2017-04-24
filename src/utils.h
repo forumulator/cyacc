@@ -41,3 +41,5 @@ void temp_var_name(int idx, char *buf);
 
 int digits (int num);
 int cstrcpy (char *dest, char *src);
+
+void print_type(struct type t);

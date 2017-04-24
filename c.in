@@ -34,10 +34,9 @@ int func(int x) {
 int nujh() {
 	int a = 2 + 4 * ( (6 + 5 ) * 2), b = 5;
 	int c;
-	struct bst b2;
-	b2.v = 4;
-	b = b2.v;
-	b = !a + 2;
+	int at[5][10][100];
+	c = at[2][3][4];
+	at[2][3][4] = c;
 
 	while (a < 10)
 	if (b == 6)

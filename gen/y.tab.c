@@ -569,12 +569,12 @@ static const yytype_uint16 yyrline[] =
      204,   240,   244,   255,   263,   264,   271,   285,   304,   305,
      308,   315,   316,   321,   333,   334,   337,   351,   355,   361,
      375,   376,   380,   387,   393,   396,   401,   411,   421,   426,
-     435,   442,   449,   487,   488,   492,   516,   525,   544,   553,
-     560,   561,   562,   563,   564,   565,   568,   569,   573,   579,
-     587,   588,   592,   627,   629,   630,   631,   637,   648,   649,
-     650,   651,   652,   653,   654,   664,   674,   683,   692,   693,
-     694,   695,   696,   697,   698,   699,   700,   701,   702,   703,
-     704,   705,   706,   707,   708,   709,   711,   714
+     435,   442,   449,   490,   491,   495,   518,   527,   546,   555,
+     562,   563,   564,   565,   566,   567,   570,   571,   575,   581,
+     589,   590,   594,   629,   631,   632,   633,   639,   650,   651,
+     652,   653,   654,   655,   656,   666,   676,   685,   699,   700,
+     701,   702,   703,   704,   705,   706,   707,   708,   709,   710,
+     711,   712,   713,   714,   715,   716,   718,   721
 };
 #endif
 
@@ -2253,12 +2253,15 @@ yyreduce:
                                 t = t->val.ptr_to;
                               // Set the type of the last node to the basic
                               // or compound type that is type_name
-                              if (t->ttype == INCOMPL_TYPE)
+                              if (t->ttype == INCOMPL_TYPE) {
+                                printf("Yes, setting");
                                 *t = (yyvsp[(1) - (3)].type);
+                              }                              
                             }
                             sym->type.array = arr;
+                            print_type(sym->type);
                             // TODO: Relloc in the entire ptr_to linked list
-                            sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
+                            // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
                             node = node->next;
                           }
                         ;}
@@ -2267,32 +2270,31 @@ yyreduce:
   case 63:
 
 /* Line 1455 of yacc.c  */
-#line 487 "src/gramm.y"
+#line 490 "src/gramm.y"
     { printf("Entering var_dlist"); list_prepend_elem(&(yyvsp[(3) - (3)].l), (yyvsp[(1) - (3)].l)); (yyval.l) = (yyvsp[(3) - (3)].l); printf("Leaving var_dlist") ;}
     break;
 
   case 64:
 
 /* Line 1455 of yacc.c  */
-#line 488 "src/gramm.y"
+#line 491 "src/gramm.y"
     { (yyval.l) = (yyvsp[(1) - (1)].l); ;}
     break;
 
   case 65:
 
 /* Line 1455 of yacc.c  */
-#line 493 "src/gramm.y"
+#line 496 "src/gramm.y"
     {
                     symrec *rec = getsym(active_func, (yyvsp[(1) - (2)].sym_npt).name, scope);
                     if (rec && rec->scope.level == scope.level) {
                       error("Redefinition of symbol");
                     }
 
+                    print_type((yyvsp[(1) - (2)].sym_npt).type);
                     rec = putsym(active_func, (yyvsp[(1) - (2)].sym_npt).name, (yyvsp[(1) - (2)].sym_npt).type, scope);
 
                     (yyval.l) = list_create_elem(rec);  
-
-                    
                     // Assign result of expr to vaiable
                     // This is should be delayed to after the 
                     // type backpatch to check coercibility
@@ -2306,7 +2308,7 @@ yyreduce:
   case 66:
 
 /* Line 1455 of yacc.c  */
-#line 517 "src/gramm.y"
+#line 519 "src/gramm.y"
     {
                 copy_name(&(yyval.sym_npt).name, (yyvsp[(1) - (1)].id_name));
                 // Create a new symbol table record
@@ -2319,7 +2321,7 @@ yyreduce:
   case 67:
 
 /* Line 1455 of yacc.c  */
-#line 526 "src/gramm.y"
+#line 528 "src/gramm.y"
     {
                 struct type *t = &((yyvsp[(1) - (4)].sym_npt).type);
                 if (const_type((yyvsp[(3) - (4)].e).val.const_str) != INT_TYPE)
@@ -2343,7 +2345,7 @@ yyreduce:
   case 68:
 
 /* Line 1455 of yacc.c  */
-#line 545 "src/gramm.y"
+#line 547 "src/gramm.y"
     {
                 struct type *to = malloc(sizeof(struct type));
                 *to = (yyvsp[(2) - (2)].sym_npt).type; // TYPE COPYING
@@ -2357,70 +2359,70 @@ yyreduce:
   case 69:
 
 /* Line 1455 of yacc.c  */
-#line 553 "src/gramm.y"
+#line 555 "src/gramm.y"
     { (yyval.sym_npt) = (yyvsp[(2) - (3)].sym_npt); ;}
     break;
 
   case 70:
 
 /* Line 1455 of yacc.c  */
-#line 560 "src/gramm.y"
+#line 562 "src/gramm.y"
     { (yyval.type) = basic_types[INT_TYPE].t; ;}
     break;
 
   case 71:
 
 /* Line 1455 of yacc.c  */
-#line 561 "src/gramm.y"
+#line 563 "src/gramm.y"
     { (yyval.type) = basic_types[FLOAT_TYPE].t; ;}
     break;
 
   case 72:
 
 /* Line 1455 of yacc.c  */
-#line 562 "src/gramm.y"
+#line 564 "src/gramm.y"
     { (yyval.type) = basic_types[CHAR_TYPE].t; ;}
     break;
 
   case 73:
 
 /* Line 1455 of yacc.c  */
-#line 563 "src/gramm.y"
+#line 565 "src/gramm.y"
     { (yyval.type) = basic_types[VOID_TYPE].t; ;}
     break;
 
   case 74:
 
 /* Line 1455 of yacc.c  */
-#line 564 "src/gramm.y"
+#line 566 "src/gramm.y"
     { (yyval.type) = (yyvsp[(1) - (1)].type); ;}
     break;
 
   case 75:
 
 /* Line 1455 of yacc.c  */
-#line 565 "src/gramm.y"
+#line 567 "src/gramm.y"
     { (yyval.type) = *(yyvsp[(1) - (1)].alias_type); ;}
     break;
 
   case 76:
 
 /* Line 1455 of yacc.c  */
-#line 568 "src/gramm.y"
+#line 570 "src/gramm.y"
     { printf("In opt_init"); (yyval.e) = (yyvsp[(2) - (2)].e); ;}
     break;
 
   case 77:
 
 /* Line 1455 of yacc.c  */
-#line 569 "src/gramm.y"
+#line 571 "src/gramm.y"
     { (yyval.e).type.ttype = UNDEF_TYPE; ;}
     break;
 
   case 78:
 
 /* Line 1455 of yacc.c  */
-#line 573 "src/gramm.y"
+#line 575 "src/gramm.y"
     { 
                   char *temp;
                   copy_name(&temp, (yyvsp[(1) - (1)].e).val.const_str);
@@ -2432,7 +2434,7 @@ yyreduce:
   case 79:
 
 /* Line 1455 of yacc.c  */
-#line 579 "src/gramm.y"
+#line 581 "src/gramm.y"
     { 
                   symrec *rec = getsym(active_func, (yyvsp[(1) - (1)].id_name), scope);
                   if (!rec) {
@@ -2446,21 +2448,21 @@ yyreduce:
   case 80:
 
 /* Line 1455 of yacc.c  */
-#line 587 "src/gramm.y"
+#line 589 "src/gramm.y"
     { (yyval.e) = (yyvsp[(2) - (3)].e); ;}
     break;
 
   case 81:
 
 /* Line 1455 of yacc.c  */
-#line 588 "src/gramm.y"
+#line 590 "src/gramm.y"
     { (yyval.e) = (yyvsp[(1) - (1)].e); ;}
     break;
 
   case 82:
 
 /* Line 1455 of yacc.c  */
-#line 593 "src/gramm.y"
+#line 595 "src/gramm.y"
     {
                   struct func_rec *func = search_func((yyvsp[(1) - (4)].id_name));
                   if (!func)
@@ -2498,28 +2500,28 @@ yyreduce:
   case 83:
 
 /* Line 1455 of yacc.c  */
-#line 627 "src/gramm.y"
+#line 629 "src/gramm.y"
     { copy_name(&(yyval.id_name), (yyvsp[(1) - (1)].id_name)); ;}
     break;
 
   case 84:
 
 /* Line 1455 of yacc.c  */
-#line 629 "src/gramm.y"
+#line 631 "src/gramm.y"
     { (yyval.l) = (yyvsp[(1) - (1)].l); ;}
     break;
 
   case 85:
 
 /* Line 1455 of yacc.c  */
-#line 630 "src/gramm.y"
+#line 632 "src/gramm.y"
     { (yyval.l) = NULL; ;}
     break;
 
   case 86:
 
 /* Line 1455 of yacc.c  */
-#line 632 "src/gramm.y"
+#line 634 "src/gramm.y"
     {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = (yyvsp[(1) - (1)].e);
@@ -2530,7 +2532,7 @@ yyreduce:
   case 87:
 
 /* Line 1455 of yacc.c  */
-#line 638 "src/gramm.y"
+#line 640 "src/gramm.y"
     {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = (yyvsp[(1) - (3)].e);
@@ -2542,49 +2544,49 @@ yyreduce:
   case 88:
 
 /* Line 1455 of yacc.c  */
-#line 648 "src/gramm.y"
+#line 650 "src/gramm.y"
     { (yyval.e) = (yyvsp[(1) - (1)].e); ;}
     break;
 
   case 89:
 
 /* Line 1455 of yacc.c  */
-#line 649 "src/gramm.y"
+#line 651 "src/gramm.y"
     { (yyval.e) = parse_indexed_expr((yyvsp[(1) - (2)].e), (yyvsp[(2) - (2)].e)); ;}
     break;
 
   case 90:
 
 /* Line 1455 of yacc.c  */
-#line 650 "src/gramm.y"
+#line 652 "src/gramm.y"
     { (yyval.e) = out_member_ref((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].id_name)); ;}
     break;
 
   case 91:
 
 /* Line 1455 of yacc.c  */
-#line 651 "src/gramm.y"
+#line 653 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '!'); ;}
     break;
 
   case 92:
 
 /* Line 1455 of yacc.c  */
-#line 652 "src/gramm.y"
+#line 654 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '~'); ;}
     break;
 
   case 93:
 
 /* Line 1455 of yacc.c  */
-#line 653 "src/gramm.y"
+#line 655 "src/gramm.y"
     { parse_unary_expr(&(yyval.e), (yyvsp[(2) - (2)].e), '-'); ;}
     break;
 
   case 94:
 
 /* Line 1455 of yacc.c  */
-#line 655 "src/gramm.y"
+#line 657 "src/gramm.y"
     { 
             struct expr_type e = create_const_expr("1");
             parse_expr(&(yyval.e), (yyvsp[(2) - (2)].e), e, '+');
@@ -2599,7 +2601,7 @@ yyreduce:
   case 95:
 
 /* Line 1455 of yacc.c  */
-#line 665 "src/gramm.y"
+#line 667 "src/gramm.y"
     { 
             struct expr_type e = create_const_expr("1");
             parse_expr(&(yyval.e), (yyvsp[(2) - (2)].e), e, '-');
@@ -2614,7 +2616,7 @@ yyreduce:
   case 96:
 
 /* Line 1455 of yacc.c  */
-#line 675 "src/gramm.y"
+#line 677 "src/gramm.y"
     {
             if (!is_coercible((yyvsp[(2) - (4)].type), (yyvsp[(4) - (4)].e).type))
               error("types are not coercible");
@@ -2628,13 +2630,18 @@ yyreduce:
   case 97:
 
 /* Line 1455 of yacc.c  */
-#line 684 "src/gramm.y"
+#line 686 "src/gramm.y"
     {
             /* Delayed eval */
-            if (is_indexed((yyvsp[(2) - (2)].e)) || is_derefd((yyvsp[(2) - (2)].e)))
-              (yyval.e) = get_vector_elem((yyvsp[(2) - (2)].e));
-            if (!is_array((yyval.e).type) && !is_pointer((yyval.e).type))
+            if (is_indexed((yyvsp[(2) - (2)].e)) || is_derefd((yyvsp[(2) - (2)].e))) {
+              printf("derf yes\n");
+              (yyvsp[(2) - (2)].e) = get_vector_elem((yyvsp[(2) - (2)].e));
+            }
+            (yyval.e) = (yyvsp[(2) - (2)].e);
+            if (!is_array((yyvsp[(2) - (2)].e).type) && !is_pointer((yyvsp[(2) - (2)].e).type))
               error("Attempting to dereference non-pointer");
+            SET_NOT_DEREF((yyval.e));
+            (yyval.e).deref.type = DEREF_EXPR;
             /* deref'd whenever used */
           ;}
     break;
@@ -2642,140 +2649,140 @@ yyreduce:
   case 98:
 
 /* Line 1455 of yacc.c  */
-#line 692 "src/gramm.y"
+#line 699 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '*'); ;}
     break;
 
   case 99:
 
 /* Line 1455 of yacc.c  */
-#line 693 "src/gramm.y"
+#line 700 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '/'); ;}
     break;
 
   case 100:
 
 /* Line 1455 of yacc.c  */
-#line 694 "src/gramm.y"
+#line 701 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '%'); ;}
     break;
 
   case 101:
 
 /* Line 1455 of yacc.c  */
-#line 695 "src/gramm.y"
+#line 702 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '+'); ;}
     break;
 
   case 102:
 
 /* Line 1455 of yacc.c  */
-#line 696 "src/gramm.y"
+#line 703 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '-'); ;}
     break;
 
   case 103:
 
 /* Line 1455 of yacc.c  */
-#line 697 "src/gramm.y"
+#line 704 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), LSHFT_OP); ;}
     break;
 
   case 104:
 
 /* Line 1455 of yacc.c  */
-#line 698 "src/gramm.y"
+#line 705 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), RSHFT_OP); ;}
     break;
 
   case 105:
 
 /* Line 1455 of yacc.c  */
-#line 699 "src/gramm.y"
+#line 706 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '>'); ;}
     break;
 
   case 106:
 
 /* Line 1455 of yacc.c  */
-#line 700 "src/gramm.y"
+#line 707 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '<'); ;}
     break;
 
   case 107:
 
 /* Line 1455 of yacc.c  */
-#line 701 "src/gramm.y"
+#line 708 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), LE_OP); ;}
     break;
 
   case 108:
 
 /* Line 1455 of yacc.c  */
-#line 702 "src/gramm.y"
+#line 709 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), GE_OP); ;}
     break;
 
   case 109:
 
 /* Line 1455 of yacc.c  */
-#line 703 "src/gramm.y"
+#line 710 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), EQ_OP); ;}
     break;
 
   case 110:
 
 /* Line 1455 of yacc.c  */
-#line 704 "src/gramm.y"
+#line 711 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), NE_OP); ;}
     break;
 
   case 111:
 
 /* Line 1455 of yacc.c  */
-#line 705 "src/gramm.y"
+#line 712 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '|'); ;}
     break;
 
   case 112:
 
 /* Line 1455 of yacc.c  */
-#line 706 "src/gramm.y"
+#line 713 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '^'); ;}
     break;
 
   case 113:
 
 /* Line 1455 of yacc.c  */
-#line 707 "src/gramm.y"
+#line 714 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), '&'); ;}
     break;
 
   case 114:
 
 /* Line 1455 of yacc.c  */
-#line 708 "src/gramm.y"
+#line 715 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e), AND_OP); ;}
     break;
 
   case 115:
 
 /* Line 1455 of yacc.c  */
-#line 709 "src/gramm.y"
+#line 716 "src/gramm.y"
     { parse_expr(&(yyval.e), (yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e),  OR_OP); ;}
     break;
 
   case 116:
 
 /* Line 1455 of yacc.c  */
-#line 711 "src/gramm.y"
+#line 718 "src/gramm.y"
     { parse_assignment((yyvsp[(1) - (3)].e), (yyvsp[(3) - (3)].e)); (yyval.e) = (yyvsp[(1) - (3)].e); ;}
     break;
 
   case 117:
 
 /* Line 1455 of yacc.c  */
-#line 715 "src/gramm.y"
+#line 722 "src/gramm.y"
     {
               if (is_indexed((yyvsp[(2) - (3)].e)) || is_derefd((yyvsp[(2) - (3)].e)))
                 (yyval.e) = get_vector_elem((yyvsp[(2) - (3)].e));
@@ -2789,7 +2796,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 2793 "gen/y.tab.c"
+#line 2800 "gen/y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -3001,7 +3008,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 725 "src/gramm.y"
+#line 732 "src/gramm.y"
 
 
 struct bigop bigops[] = {
@@ -3330,9 +3337,13 @@ out_index (struct expr_type e) {
   char tname[10], oft_name[10]; 
   assign_name_to_buf(&name, e);
 
+  symrec *sym = getsym(active_func, name, scope);
+
   temp_var_name(next_quad++, tname);
   temp_var_name(oft_temp, oft_name);
-
+  fprintf(outfile, "if ( %s < %d ) goto _L%d\n", oft_name, sym->type.array.size * base_size_of(sym->type), label_no);
+  fprintf(outfile, "exit 1\n");
+  out_label();
   fprintf(outfile, "%s = %s [%s]\n", tname, name, oft_name);
 
   free(name);
@@ -3442,17 +3453,18 @@ void out_label () {
 struct expr_type
 compound_indexing (struct expr_type e, struct expr_type idx) {
   struct expr_type ret = e;
-  int incr_size = e.type.array.size/e.type.array.dimen[0];
+  int incr_size = e.type.array.dimen[1];
   char const_str[MAX_INT_SIZE];  snprintf(const_str, MAX_INT_SIZE, "%d", incr_size);
-
+  int t = next_quad;
   make_quad_with_const(*(e.deref.idx), const_str, '*');
-  int t = next_quad; char temp[20];
+  char temp[20];
   temp_var_name(t, temp);
+  int final_quad = next_quad;
   make_quad_with_const(idx, temp, '+');
 
   ret.type = arr_reduce_dimen(ret.type);
   ret.deref.idx->ptr = QUAD_PTR;
-  ret.deref.idx->val.quad_no = t;
+  ret.deref.idx->val.quad_no = final_quad;
 
   return ret;
 }
@@ -3484,13 +3496,21 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 int 
 sout_expr_with_deref (char *buf, struct expr_type e) {
   int t1 = next_quad; char *name = NULL;
+  printf("Here===========\n");
   assign_name_to_buf(&name, e);
   if (is_derefd(e)) {
+    printf("===========OA': *%s\n", name);
+    // exit(1);
     return sprintf(buf, "*%s ", name);
   }
   else if (is_indexed(e)) {
     if (is_array(e.type)) {
+      symrec *sym = getsym(active_func, name, scope);
       out_vector_offset(e, *(e.deref.idx));
+      fprintf(outfile, "if ( _t%d < %d ) goto _L%d\n", t1, 
+          sym->type.array.size * base_size_of(sym->type), label_no);
+      fprintf(outfile, "exit 1\n");
+      out_label();
       return sprintf(buf, "%s[_t%d] ", name, t1);
     }
     else {
@@ -3506,6 +3526,7 @@ void
 out_assign_expr (struct expr_type lval, struct expr_type rval) {
   char *assign = malloc(2 * MAX_IDENTIFIER_SIZE * sizeof(char));
   int pos = 0;
+  printf("is_derefd: %d", is_derefd(lval));
   /* Print lvalue */
   pos += sout_expr_with_deref(assign, lval);
   assign[pos++] = ' ';  assign[pos++] = '='; assign[pos++] = ' ';
@@ -3521,13 +3542,19 @@ out_assign_expr (struct expr_type lval, struct expr_type rval) {
 struct type
 get_target_type (struct expr_type e) {
   if (is_indexed(e)) {
-    if (is_array(e.type))
+    if (is_array(e.type)) {
+      printf("1256\n");      
       return arr_reduce_dimen(e.type);
-    else /* Structures member access */
+    }
+    else {
+      printf("1260, %d\n", e.deref.mem_oft);
       return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
+    } /* Structures member access */
   }
-  else if (is_derefd(e)) 
+  else if (is_derefd(e)) {
+    printf("1265\n");
     return *(e.type.val.ptr_to);
+  } 
   else
     return e.type;
 
@@ -3535,19 +3562,30 @@ get_target_type (struct expr_type e) {
 
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
+  printf("1269\n");
   struct expr_type result; 
   struct type lt = get_target_type(lval), rt = get_target_type(rval);
+  printf("1272\n");
+  
   if (is_void_type(rt))
     error("void value not ignored as it ought to be");
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
   if (is_equiv(lt, rt)) {
+  printf("1277\n");
+
     out_assign_expr(lval, rval);
+  printf("1280\n");
+
     return;
   }
   if (is_coercible(lt, rt)) {
     /* Warning goes here */
+  printf("1286\n");
+
     out_assign_expr(lval, rval);
+  printf("1289\n");
+
     return;
   } 
   /* Inconvertible, eg. incompatible types when assigning

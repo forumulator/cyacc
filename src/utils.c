@@ -110,6 +110,7 @@ is_coercible (struct type to, struct type from) {
  * indexing or deref or a symbol */
 int
 is_assignable (struct expr_type e) {
+  /* Is this a symbol table entry */
   if (e.ptr == SYM_PTR)
     return true;
   if (is_indexed(e) || is_derefd(e))
@@ -301,4 +302,21 @@ cstrcpy (char *dest, char *src) {
     nchars++;
   *dest = 0;
   return nchars + 1;
+}
+
+void print_type(struct type t) {
+  struct type *p = &t;
+  while (p) {
+    if (p->ttype == BASIC_TYPE)
+      printf("(B_T, %d, %d) -> ", p->val.btype, is_array(*p));
+    else if (p->ttype == COMPOUND_TYPE)
+      printf("(C_T, %s, %d) -> ", p->val.stype->name, is_array(*p));
+    else
+      printf("(P_T, %d) -> ", is_array(*p));
+
+    if (p->ttype == PTR_TYPE)
+      p = p->val.ptr_to;
+    else
+      p = NULL;
+  }
 }
