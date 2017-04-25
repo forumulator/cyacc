@@ -27,6 +27,7 @@ void count();
 
 %%
 "/*"			{ comment(); }
+"//"			{ line_comment(); }
 
 "auto"			{ count(); return(AUTO); }
 "break"			{ count(); return(BREAK); }

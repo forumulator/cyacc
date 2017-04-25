@@ -11,6 +11,20 @@
 #define is_indexed(x) ((x).deref.type == INDEX_EXPR)
 #define is_derefd(x) ((x).deref.type == DEREF_EXPR)
 
+#define is_compound(x) ((x).ttype == COMPOUND_TYPE)
+#define is_vector(x) (is_array(x) || is_pointer(x))
+#define is_array(x) ((x).array.n > 0)
+#define is_pointer(x) ((x).ttype == PTR_TYPE)
+
+#define is_int_type(t) ((t).ttype == BASIC_TYPE && ((t).val.btype == INT_TYPE || (t).val.btype == CHAR_TYPE) && !is_array(t))
+#define is_void_type(t) ((t).ttype == BASIC_TYPE && (t).val.btype == VOID_TYPE)
+#define is_int_expr(e) (is_int_type(e.type))
+
+#define is_plus(op) (op == '+' || op == '-')
+#define is_relational(op) (op == '>' || op == '<' || op == LE_OP || op == GE_OP || op == EQ_OP)
+#define is_logical(op) (op == AND_OP || op == OR_OP)
+#define is_binary(op) (op == '&' || op == '|' || op == '^')
+
 struct scope_type {
   int level;
   int label;
@@ -151,6 +165,8 @@ struct type *get_alias(char *name);
 void create_alias(char *name, struct type type);
 
 struct memb_list *create_member (char *name, struct memb_list *join);
+
+int size_of_target(struct type t);
 
 int size_of (struct type t);
 int base_size_of (struct type t);

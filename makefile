@@ -40,7 +40,11 @@ assemble:
 	$(CC) -S -I"$(src)" src/utils.c -o gen/utils.s
 
 cyacc: lexer parser
-	-$(CC) -I"$(src)" -o cyacc$(ext) gen/y.tab.c gen/lex.yy.c src/calc.c src/utils.c src/func.c ;\
+	@$(CC) -I"$(src)" -o cyacc$(ext) gen/y.tab.c gen/lex.yy.c src/calc.c src/utils.c src/func.c ;\
+	if [ $$? -eq 0 ] ; then echo -e "$(succ_msg)" ; else echo -e "$(fail_msg)"; fi
+
+debug: lexer parser
+	@$(CC) -I"$(src)" -g -o cyacc$(ext) gen/y.tab.c gen/lex.yy.c src/calc.c src/utils.c src/func.c ;\
 	if [ $$? -eq 0 ] ; then echo -e "$(succ_msg)" ; else echo -e "$(fail_msg)"; fi
 
 

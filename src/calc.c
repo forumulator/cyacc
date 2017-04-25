@@ -90,7 +90,6 @@ struct struct_type
 }
 
 // Get element by offset
-// Get element by offset
 struct type 
 struct_get_elem (struct struct_type *stype, int oft) {
   struct memb_list *node = stype->elems;
@@ -188,6 +187,14 @@ size_of (struct type t) {
   //   return size * t.array.size;
   // else return -1;
 } 
+
+int size_of_target (struct type t) {
+  if (is_array(t))
+    return base_size_of(t);
+  if (is_pointer(t))
+    return size_of(*(t.val.ptr_to));
+  return size_of(t);
+}
 
 int
 base_size_of (struct type t) {

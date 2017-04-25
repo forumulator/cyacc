@@ -9,7 +9,6 @@ struct list *func_table;
 
 
 void print_sym_table(struct list *sym_table) {
-
 	struct list *node = sym_table;
 	symrec * rec;
 	printf("Symbol Tabl\n");
@@ -84,7 +83,7 @@ putsym (struct func_rec *active_func, char *sym_name,
   else
   	list_append_elem(&(global_sym_table), list_create_elem(((void *)ptr)));
 
- 	print_sym_table(global_sym_table);
+ 	// print_sym_table(global_sym_table);
 
     // sym_table = global_sym_table;
   return ptr;

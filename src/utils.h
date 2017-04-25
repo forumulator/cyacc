@@ -21,6 +21,8 @@ void *list_pop_front (struct list **l) ;
 void copy_name (char **, char *);
 
 struct expr_type create_const_expr(char *const_str);
+struct expr_type create_const_expr2(int c);
+void array_decay (struct expr_type *e);
 
 int is_coercible (struct type to, struct type from);
 
@@ -49,3 +51,5 @@ void dump_tables();
 void dump_sym_tables();
 void dump_table (FILE *tfile, struct list *sym_table);
 void dump_struct_table ();
+
+struct type get_target_type (struct expr_type e);

@@ -1,6 +1,7 @@
 // Todo: Add coercibility checks
 // Add string literals
 
+/* TODO: Store values for constants */
 /* TODO: SET INDICES and #defines PROPERLY */
 
 %{
@@ -35,6 +36,7 @@ struct list *nested;
 struct scope_type scope;
 
 struct func_rec *active_func;
+// FILE *yyin;
 
 // Builtin type info.
 void init_globals();
@@ -42,27 +44,32 @@ void init_globals();
 %}
 
 %union {
-double  val;  /* For returning numbers.                   */  
-char *id_name;
-char *t_name;
-symrec *sym;
-struct {
-  char *name;
-  struct type type;
-} sym_npt; // stands for name and pointer types
-struct {
-  int type;
+  double t;
   int val;
-} constant;
-struct expr_type e;
-struct type type;
-int patch;
-struct pair dual_patch;
-struct loop_type loop;
-int ttype;
-struct memb_list *tlist;
-struct list *l;
-struct type *alias_type;
+}
+
+%union {
+  double  val;  /* For returning numbers.                   */  
+  char *id_name;
+  char *t_name;
+  symrec *sym;
+  struct sym_list{
+    char *name;
+    struct type type;
+  } sym_npt; // stands for name and pointer types
+  struct {
+    int type;
+    int val;
+  } constant;
+  struct expr_type e;
+  struct type type;
+  int patch;
+  struct pair dual_patch;
+  struct loop_type loop;
+  int ttype;
+  struct memb_list *tlist;
+  struct list *l;
+  struct type *alias_type;
 }
 
 %token OR_OP AND_OP EQ_OP NE_OP
@@ -522,6 +529,7 @@ symbol_name : IDENTIFIER
             /* TODO: Size decided by initializers */
             | symbol_name '[' CONSTANT ']'
               {
+                struct sym_list db = $1;
                 struct type *t = &($1.type);
                 if (const_type($3.val.const_str) != INT_TYPE)
                   error("size of array has non-integer type");
@@ -541,6 +549,7 @@ symbol_name : IDENTIFIER
               }
             | '*' symbol_name
               {
+                struct sym_list db = $2;
                 struct type *to = malloc(sizeof(struct type));
                 *to = $2.type; // TYPE COPYING
                 $$.type.ttype = PTR_TYPE;
@@ -603,8 +612,11 @@ function_call : func_name '(' actual_params_list ')'
                     arg_num++;
                     t = ((symrec *)fp->data)->type;
                     e = (struct expr_type *)ap->data;
-                    if (!is_equiv(t, e->type) && !is_coercible(t, e->type))
-                      error("incompatible type for argument");
+                    if (!is_equiv(t, e->type))
+                      if (is_coercible(t, e->type))
+                        warning("implicit type conversion while passing parameters");
+                      else
+                        error("incompatible type for argument");
                     out_param(*e);
                     fp = fp->next;
                     ap = ap->next;
@@ -739,8 +751,12 @@ struct bigop bigops[] = {
 };
 
 int
-main ()
+main (int argc, char **argv)
 {
+  const char *filename = "";
+
+  if (argc > 1)
+    filename = argv[1];
   /* TODO: Parse args properly */
   outfile = fopen(DEFAULT_OUT, "w+");
   if (!outfile) {
@@ -748,14 +764,14 @@ main ()
     exit(1);
   }
 
-  init_globals();
+  init_globals(filename);
   init_tables();
 
   yyparse ();
 }
 
 void
-init_globals() {
+init_globals(char *infile) {
   int i;
   BIGOPS_NUM = sizeof(bigops);
   // Current loop information
@@ -769,6 +785,11 @@ init_globals() {
     patches[i] = 0;
   scope.level = scope.label = scope.over = 0;
   active_func = NULL;
+  if (infile)
+    yyin = fopen(infile, "r");
+  else
+    yyin = stdin;
+
 }
 
 yyerror (s)  /* Called by yyparse on error */
@@ -779,14 +800,15 @@ yyerror (s)  /* Called by yyparse on error */
 
 void
 error (char *msg) {
-  printf("%d:%d: error: %s\n", lineno, colno, msg);
+  printf("\n%d:%d: error: %s\n", lineno, colno, msg);
   fclose(outfile);
+  fclose(yyin);
   exit(1);
 }
 
 void
 warning (char *msg) {
-  printf("warning: %s\n", msg);
+  printf("\n%d:%d: warning: %s\n", lineno, colno, msg);
 }
 
 struct init
@@ -912,31 +934,70 @@ parse_unary_expr (struct expr_type *result,
     // $$.type = MAX($1.type, $3.type);
 }
 
+void
+parse_vector_expr (struct expr_type *result, struct expr_type e1,
+          struct expr_type e2, int op) {
+  int sub_flag = 0; int qno;
+  if (is_relational(op) || is_logical(op))
+      goto vec_fin;
+  /* Atleast one of the two is a pointer, so 
+   * if this condition is true, both of them are */
+  if (op == '-' && is_equiv(e1.type, e2.type)) {
+    sub_flag = 1;
+    goto vec_fin;
+  }
+  if (is_plus(op)) {
+    if (is_int_type(e1.type)) {
+      parse_expr(&e1, e1, 
+        create_const_expr2(size_of_target(e2.type)), '*'); 
+      goto vec_fin;
+    }
+    else if (is_int_type(e2.type)) {
+      parse_expr(&e2, e2,
+        create_const_expr2(size_of_target(e1.type)), '*'); 
+      goto vec_fin;
+    }
+  }
+  error("Invalid operands type to binary operator");
+
+  vec_fin:
+  qno = next_quad;
+  make_quad(e1, e2, op);
+  result->ptr = QUAD_PTR; result->val.quad_no = qno;
+  result->type = basic_types[INT_TYPE].t;
+  SET_NOT_DEREF((*result));
+
+  if (sub_flag) {
+    parse_expr(result, *result, 
+      create_const_expr2(size_of_target(e1.type)), '/');
+  }
+}
 
 void
 parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op) {
-    // Check for coercibility here
-  // printf("918\n");
+  int qno;
+  /* TODO: Check for coercibility here */
   if (is_indexed(e1) || is_derefd(e1)) {
-    // printf("920\n");
     e1 = get_vector_elem(e1);
   }
   if (is_indexed(e2) || is_derefd(e2)) {
-    // printf("924\n");
     e2 = get_vector_elem(e2);
   }
-  // printf("923\n");
-  int qno = next_quad;
-  // printf("t: %d\n", e1.val.quad_no);
+  if (is_compound(e1.type) || is_compound(e2.type))
+    error("Invalid struct argument type to binary operator, expected scalar");
+  /* array and pointer operations */
+  if (is_vector(e1.type) || is_vector(e2.type)) {
+    parse_vector_expr(result, e1, e2, op);
+    return;
+  }
+
+  output:
+  qno = next_quad;
   make_quad(e1, e2, op);
-  // printf("926\n");
   result->ptr = QUAD_PTR; result->val.quad_no = qno;
   result->type = e1.type;
-  // printf("type: %d\n", e1.type.ttype);
-  // printf("929\n");
   SET_NOT_DEREF((*result));
-  // $$.type = MAX($1.type, $3.type);
 }
 
 void
@@ -1051,12 +1112,12 @@ out_index (struct expr_type e) {
 
   char tname[10], oft_name[10]; 
   assign_name_to_buf(&name, e);
-
   symrec *sym = getsym(active_func, name, scope);
 
   temp_var_name(next_quad++, tname);
   temp_var_name(oft_temp, oft_name);
-  fprintf(outfile, "\t if ( %s < %d ) goto _L%d\n", oft_name, sym->type.array.size * base_size_of(sym->type), label_no);
+  fprintf(outfile, "\t if ( %s < %d ) goto _L%d\n", oft_name, 
+    sym->type.array.size * base_size_of(sym->type), label_no);
   fprintf(outfile, "\t exit 1\n");
   out_label();
   fprintf(outfile, "\t %s = %s [%s]\n", tname, name, oft_name);
@@ -1068,17 +1129,10 @@ void
 out_const_index (struct expr_type e, const int c) {
   /* TODO: Take care of sizes (10 here) by allocating
    * global buffers maybe */
-  // printf("c: %d\n", c);
   char *name = NULL;
   assign_name_to_buf(&name, e);
-  // printf("1069\n");
   struct type *t = &e.type;
-  // printf("1071\n");
-  // int oft = (t->array.size / t->array.dimen[0]) * base_size_of(*t);
-  // printf("1073\n");
-  // struct type redd = out_index(e, create_const_expr(const_str));
   fprintf(outfile, "\t _t%d = %s[%d]\n", next_quad++, name, c);
-  // printf("1076\n");
   free(name);
   return;
 }
@@ -1133,12 +1187,9 @@ get_vector_elem (struct expr_type e) {
   ret.val.quad_no = next_quad; 
   if (is_array(e.type)) {
     if (is_derefd(e)) {
-      // printf("1127\n");
       out_const_index(e, 0);
-      // printf("1129\n");
     }
     else {
-      // printf("918\n");
       out_index(e);
       ret.val.quad_no++;
     }
@@ -1155,15 +1206,9 @@ get_vector_elem (struct expr_type e) {
     ret.type = *(e.type.val.ptr_to);
   }
   else {
-    // printf("1149\n");
-    /* Structure member ref */
     int oft = e.deref.mem_oft;
     out_const_index(e, oft);
-    // printf("1153\n");
-    // printf("Oftt: %d\n", oft);
     ret.type = struct_get_elem(e.type.val.stype, oft);
-    // printf("type: %d\n", ret.type.ttype);
-    // printf("1155\n");
   }
   return ret;
 }
@@ -1261,26 +1306,6 @@ out_assign_expr (struct expr_type lval, struct expr_type rval) {
   free(assign);
   return;
 }
-
-struct type
-get_target_type (struct expr_type e) {
-  if (is_indexed(e)) {
-    if (is_array(e.type)) {
-      return arr_reduce_dimen(e.type);
-    }
-    else {
-      // printf("Oft: %d", e.deref.mem_oft);
-      return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
-    } /* Structures member access */
-  }
-  else if (is_derefd(e)) {
-    return *(e.type.val.ptr_to);
-  } 
-  else
-    return e.type;
-
-}
-
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
   struct expr_type result; 
@@ -1291,16 +1316,12 @@ parse_assignment (struct expr_type lval, struct expr_type rval) {
   if (!is_assignable(lval))
     error("error: lvalue required as left operand of assignment");
   if (is_equiv(lt, rt)) {
-
     out_assign_expr(lval, rval);
-
     return;
   }
   if (is_coercible(lt, rt)) {
-    /* Warning goes here */
-
+    warning("implicit conversion between types");
     out_assign_expr(lval, rval);
-
     return;
   } 
   /* Inconvertible, eg. incompatible types when assigning
@@ -1310,7 +1331,7 @@ parse_assignment (struct expr_type lval, struct expr_type rval) {
 
 void
 out_begin_func () {
-  fprintf(outfile, "FUNCTION BEGIN:\n");
+  fprintf(outfile, "FUNCTION %s() BEGIN:\n", active_func->name);
 }
 
 void

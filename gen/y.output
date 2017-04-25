@@ -28,7 +28,7 @@ Grammar
 
     0 $accept: input $end
 
-    1 input: %empty
+    1 input: /* empty */
     2      | global_statement input
 
     3 global_statement: declaration_statement
@@ -36,7 +36,7 @@ Grammar
     5                 | function_definition
 
     6 body: body_statement body
-    7     | %empty
+    7     | /* empty */
 
     8 body_statement: declaration_statement
     9               | jump_statement
@@ -57,14 +57,14 @@ Grammar
 
    21 func_head: res_id begin_params '(' param_decl_list ')' end_params
 
-   22 begin_params: %empty
+   22 begin_params: /* empty */
 
-   23 end_params: %empty
+   23 end_params: /* empty */
 
    24 res_id: type_name IDENTIFIER
 
    25 param_decl_list: param_list
-   26                | %empty
+   26                | /* empty */
 
    27 param_list: param_decl
    28           | param_decl ',' param_list
@@ -73,9 +73,9 @@ Grammar
 
    30 block_statement: begin_sub '{' body '}' end_sub
 
-   31 begin_sub: %empty
+   31 begin_sub: /* empty */
 
-   32 end_sub: %empty
+   32 end_sub: /* empty */
 
    33 type_definition: aliasing ';'
    34                | compound_type ';'
@@ -88,12 +88,12 @@ Grammar
 
    39 ctype_name: IDENTIFIER
 
-   40 opt_ctype_name: %empty
+   40 opt_ctype_name: /* empty */
    41               | ctype_name
 
    42 member_decl_list: member_decl opt_member_decl_list
 
-   43 opt_member_decl_list: %empty
+   43 opt_member_decl_list: /* empty */
    44                     | member_decl_list
 
    45 member_decl: type_name id_list ';'
@@ -143,7 +143,7 @@ Grammar
    74          | ALIAS_NAME
 
    75 opt_init: '=' expr
-   76         | %empty
+   76         | /* empty */
 
    77 primary_expr: CONSTANT
    78             | IDENTIFIER
@@ -155,7 +155,7 @@ Grammar
    82 func_name: IDENTIFIER
 
    83 actual_params_list: actual_params
-   84                   | %empty
+   84                   | /* empty */
 
    85 actual_params: expr
    86              | expr ',' actual_params
@@ -375,7 +375,7 @@ indexing (122)
     on left: 116, on right: 88
 
 
-State 0
+state 0
 
     0 $accept: . input $end
 
@@ -403,7 +403,7 @@ State 0
     type_name              go to state 19
 
 
-State 1
+state 1
 
    48 aliasing: TYPEDEF . type_name IDENTIFIER
 
@@ -420,63 +420,63 @@ State 1
     type_name      go to state 21
 
 
-State 2
+state 2
 
    71 type_name: CHAR .
 
     $default  reduce using rule 71 (type_name)
 
 
-State 3
+state 3
 
    69 type_name: INT .
 
     $default  reduce using rule 69 (type_name)
 
 
-State 4
+state 4
 
    70 type_name: FLOAT .
 
     $default  reduce using rule 70 (type_name)
 
 
-State 5
+state 5
 
    72 type_name: VOID .
 
     $default  reduce using rule 72 (type_name)
 
 
-State 6
+state 6
 
    37 type_type: STRUCT .
 
     $default  reduce using rule 37 (type_type)
 
 
-State 7
+state 7
 
    38 type_type: UNION .
 
     $default  reduce using rule 38 (type_type)
 
 
-State 8
+state 8
 
    74 type_name: ALIAS_NAME .
 
     $default  reduce using rule 74 (type_name)
 
 
-State 9
+state 9
 
     0 $accept: input . $end
 
     $end  shift, and go to state 22
 
 
-State 10
+state 10
 
     2 input: global_statement . input
 
@@ -504,14 +504,14 @@ State 10
     type_name              go to state 19
 
 
-State 11
+state 11
 
     5 global_statement: function_definition .
 
     $default  reduce using rule 5 (global_statement)
 
 
-State 12
+state 12
 
    20 function_definition: func_head . block_statement
 
@@ -521,7 +521,7 @@ State 12
     begin_sub        go to state 25
 
 
-State 13
+state 13
 
    21 func_head: res_id . begin_params '(' param_decl_list ')' end_params
 
@@ -530,14 +530,14 @@ State 13
     begin_params  go to state 26
 
 
-State 14
+state 14
 
     4 global_statement: type_definition .
 
     $default  reduce using rule 4 (global_statement)
 
 
-State 15
+state 15
 
    34 type_definition: compound_type . ';'
    73 type_name: compound_type .
@@ -547,7 +547,7 @@ State 15
     $default  reduce using rule 73 (type_name)
 
 
-State 16
+state 16
 
    35 compound_type: type_type . opt_ctype_name '{' member_decl_list '}'
    36              | type_type . ctype_name
@@ -560,21 +560,21 @@ State 16
     opt_ctype_name  go to state 30
 
 
-State 17
+state 17
 
    33 type_definition: aliasing . ';'
 
     ';'  shift, and go to state 31
 
 
-State 18
+state 18
 
     3 global_statement: declaration_statement .
 
     $default  reduce using rule 3 (global_statement)
 
 
-State 19
+state 19
 
    24 res_id: type_name . IDENTIFIER
    61 declaration_statement: type_name . var_dlist ';'
@@ -588,70 +588,70 @@ State 19
     symbol_name     go to state 37
 
 
-State 20
+state 20
 
    73 type_name: compound_type .
 
     $default  reduce using rule 73 (type_name)
 
 
-State 21
+state 21
 
    48 aliasing: TYPEDEF type_name . IDENTIFIER
 
     IDENTIFIER  shift, and go to state 38
 
 
-State 22
+state 22
 
     0 $accept: input $end .
 
     $default  accept
 
 
-State 23
+state 23
 
     2 input: global_statement input .
 
     $default  reduce using rule 2 (input)
 
 
-State 24
+state 24
 
    20 function_definition: func_head block_statement .
 
     $default  reduce using rule 20 (function_definition)
 
 
-State 25
+state 25
 
    30 block_statement: begin_sub . '{' body '}' end_sub
 
     '{'  shift, and go to state 39
 
 
-State 26
+state 26
 
    21 func_head: res_id begin_params . '(' param_decl_list ')' end_params
 
     '('  shift, and go to state 40
 
 
-State 27
+state 27
 
    34 type_definition: compound_type ';' .
 
     $default  reduce using rule 34 (type_definition)
 
 
-State 28
+state 28
 
    39 ctype_name: IDENTIFIER .
 
     $default  reduce using rule 39 (ctype_name)
 
 
-State 29
+state 29
 
    36 compound_type: type_type ctype_name .
    41 opt_ctype_name: ctype_name .
@@ -660,21 +660,21 @@ State 29
     $default  reduce using rule 36 (compound_type)
 
 
-State 30
+state 30
 
    35 compound_type: type_type opt_ctype_name . '{' member_decl_list '}'
 
     '{'  shift, and go to state 41
 
 
-State 31
+state 31
 
    33 type_definition: aliasing ';' .
 
     $default  reduce using rule 33 (type_definition)
 
 
-State 32
+state 32
 
    24 res_id: type_name IDENTIFIER .
    65 symbol_name: IDENTIFIER .
@@ -683,7 +683,7 @@ State 32
     $default  reduce using rule 65 (symbol_name)
 
 
-State 33
+state 33
 
    67 symbol_name: '*' . symbol_name
 
@@ -694,7 +694,7 @@ State 33
     symbol_name  go to state 43
 
 
-State 34
+state 34
 
    68 symbol_name: '(' . symbol_name ')'
 
@@ -705,14 +705,14 @@ State 34
     symbol_name  go to state 44
 
 
-State 35
+state 35
 
    61 declaration_statement: type_name var_dlist . ';'
 
     ';'  shift, and go to state 45
 
 
-State 36
+state 36
 
    62 var_dlist: var_definition . ',' var_dlist
    63          | var_definition .
@@ -722,7 +722,7 @@ State 36
     $default  reduce using rule 63 (var_dlist)
 
 
-State 37
+state 37
 
    64 var_definition: symbol_name . opt_init
    66 symbol_name: symbol_name . '[' CONSTANT ']'
@@ -735,14 +735,14 @@ State 37
     opt_init  go to state 49
 
 
-State 38
+state 38
 
    48 aliasing: TYPEDEF type_name IDENTIFIER .
 
     $default  reduce using rule 48 (aliasing)
 
 
-State 39
+state 39
 
    30 block_statement: begin_sub '{' . body '}' end_sub
 
@@ -797,7 +797,7 @@ State 39
     expr                   go to state 84
 
 
-State 40
+state 40
 
    21 func_head: res_id begin_params '(' . param_decl_list ')' end_params
 
@@ -819,7 +819,7 @@ State 40
     type_name        go to state 88
 
 
-State 41
+state 41
 
    35 compound_type: type_type opt_ctype_name '{' . member_decl_list '}'
 
@@ -838,14 +838,14 @@ State 41
     type_name         go to state 91
 
 
-State 42
+state 42
 
    65 symbol_name: IDENTIFIER .
 
     $default  reduce using rule 65 (symbol_name)
 
 
-State 43
+state 43
 
    66 symbol_name: symbol_name . '[' CONSTANT ']'
    67            | '*' symbol_name .
@@ -855,7 +855,7 @@ State 43
     $default  reduce using rule 67 (symbol_name)
 
 
-State 44
+state 44
 
    66 symbol_name: symbol_name . '[' CONSTANT ']'
    68            | '(' symbol_name . ')'
@@ -864,14 +864,14 @@ State 44
     '['  shift, and go to state 48
 
 
-State 45
+state 45
 
    61 declaration_statement: type_name var_dlist ';' .
 
     $default  reduce using rule 61 (declaration_statement)
 
 
-State 46
+state 46
 
    62 var_dlist: var_definition ',' . var_dlist
 
@@ -884,7 +884,7 @@ State 46
     symbol_name     go to state 37
 
 
-State 47
+state 47
 
    75 opt_init: '=' . expr
 
@@ -904,28 +904,28 @@ State 47
     expr           go to state 95
 
 
-State 48
+state 48
 
    66 symbol_name: symbol_name '[' . CONSTANT ']'
 
     CONSTANT  shift, and go to state 96
 
 
-State 49
+state 49
 
    64 var_definition: symbol_name opt_init .
 
     $default  reduce using rule 64 (var_definition)
 
 
-State 50
+state 50
 
    11 body_statement: error .
 
     $default  reduce using rule 11 (body_statement)
 
 
-State 51
+state 51
 
    93 expr: INC_OP . expr
 
@@ -945,7 +945,7 @@ State 51
     expr           go to state 97
 
 
-State 52
+state 52
 
    94 expr: DEC_OP . expr
 
@@ -965,35 +965,35 @@ State 52
     expr           go to state 98
 
 
-State 53
+state 53
 
    56 while_clause: WHILE . '(' expr ')'
 
     '('  shift, and go to state 99
 
 
-State 54
+state 54
 
    53 jump_statement: GOTO . IDENTIFIER ';'
 
     IDENTIFIER  shift, and go to state 100
 
 
-State 55
+state 55
 
    51 jump_statement: CONTINUE . ';'
 
     ';'  shift, and go to state 101
 
 
-State 56
+state 56
 
    52 jump_statement: BREAK . ';'
 
     ';'  shift, and go to state 102
 
 
-State 57
+state 57
 
    18 return_statement: RETURN . expr ';'
    19                 | RETURN . ';'
@@ -1015,14 +1015,14 @@ State 57
     expr           go to state 104
 
 
-State 58
+state 58
 
    77 primary_expr: CONSTANT .
 
     $default  reduce using rule 77 (primary_expr)
 
 
-State 59
+state 59
 
    17 label_stmt: IDENTIFIER . ':'
    78 primary_expr: IDENTIFIER .
@@ -1034,7 +1034,7 @@ State 59
     $default  reduce using rule 78 (primary_expr)
 
 
-State 60
+state 60
 
    92 expr: '-' . expr
 
@@ -1054,7 +1054,7 @@ State 60
     expr           go to state 106
 
 
-State 61
+state 61
 
    96 expr: '*' . expr
 
@@ -1074,7 +1074,7 @@ State 61
     expr           go to state 107
 
 
-State 62
+state 62
 
    90 expr: '!' . expr
 
@@ -1094,7 +1094,7 @@ State 62
     expr           go to state 108
 
 
-State 63
+state 63
 
    91 expr: '~' . expr
 
@@ -1114,21 +1114,21 @@ State 63
     expr           go to state 109
 
 
-State 64
+state 64
 
    59 if_clause: IF . '(' expr ')'
 
     '('  shift, and go to state 110
 
 
-State 65
+state 65
 
    50 expression_statement: ';' .
 
     $default  reduce using rule 50 (expression_statement)
 
 
-State 66
+state 66
 
    79 primary_expr: '(' . expr ')'
    95 expr: '(' . type_name ')' expr
@@ -1159,14 +1159,14 @@ State 66
     expr           go to state 112
 
 
-State 67
+state 67
 
    30 block_statement: begin_sub '{' body . '}' end_sub
 
     '}'  shift, and go to state 113
 
 
-State 68
+state 68
 
     6 body: body_statement . body
 
@@ -1221,56 +1221,56 @@ State 68
     expr                   go to state 84
 
 
-State 69
+state 69
 
    15 body_statement: label_stmt .
 
     $default  reduce using rule 15 (body_statement)
 
 
-State 70
+state 70
 
    16 body_statement: return_statement .
 
     $default  reduce using rule 16 (body_statement)
 
 
-State 71
+state 71
 
    14 body_statement: block_statement .
 
     $default  reduce using rule 14 (body_statement)
 
 
-State 72
+state 72
 
    10 body_statement: expression_statement .
 
     $default  reduce using rule 10 (body_statement)
 
 
-State 73
+state 73
 
     9 body_statement: jump_statement .
 
     $default  reduce using rule 9 (body_statement)
 
 
-State 74
+state 74
 
    13 body_statement: iterative_statement .
 
     $default  reduce using rule 13 (body_statement)
 
 
-State 75
+state 75
 
    54 iterative_statement: while_loop .
 
     $default  reduce using rule 54 (iterative_statement)
 
 
-State 76
+state 76
 
    55 while_loop: while_clause . body_statement
 
@@ -1323,14 +1323,14 @@ State 76
     expr                   go to state 84
 
 
-State 77
+state 77
 
    12 body_statement: selection_statement .
 
     $default  reduce using rule 12 (body_statement)
 
 
-State 78
+state 78
 
    57 selection_statement: if_clause . body_statement
    58                    | if_clause . body_statement else_clause body_statement
@@ -1384,14 +1384,14 @@ State 78
     expr                   go to state 84
 
 
-State 79
+state 79
 
     8 body_statement: declaration_statement .
 
     $default  reduce using rule 8 (body_statement)
 
 
-State 80
+state 80
 
    61 declaration_statement: type_name . var_dlist ';'
 
@@ -1404,28 +1404,28 @@ State 80
     symbol_name     go to state 37
 
 
-State 81
+state 81
 
    87 expr: primary_expr .
 
     $default  reduce using rule 87 (expr)
 
 
-State 82
+state 82
 
    80 primary_expr: function_call .
 
     $default  reduce using rule 80 (primary_expr)
 
 
-State 83
+state 83
 
    81 function_call: func_name . '(' actual_params_list ')'
 
     '('  shift, and go to state 117
 
 
-State 84
+state 84
 
    49 expression_statement: expr . ';'
    88 expr: expr . indexing
@@ -1476,21 +1476,21 @@ State 84
     indexing  go to state 140
 
 
-State 85
+state 85
 
    21 func_head: res_id begin_params '(' param_decl_list . ')' end_params
 
     ')'  shift, and go to state 141
 
 
-State 86
+state 86
 
    25 param_decl_list: param_list .
 
     $default  reduce using rule 25 (param_decl_list)
 
 
-State 87
+state 87
 
    27 param_list: param_decl .
    28           | param_decl . ',' param_list
@@ -1500,7 +1500,7 @@ State 87
     $default  reduce using rule 27 (param_list)
 
 
-State 88
+state 88
 
    29 param_decl: type_name . symbol_name
 
@@ -1511,14 +1511,14 @@ State 88
     symbol_name  go to state 143
 
 
-State 89
+state 89
 
    35 compound_type: type_type opt_ctype_name '{' member_decl_list . '}'
 
     '}'  shift, and go to state 144
 
 
-State 90
+state 90
 
    42 member_decl_list: member_decl . opt_member_decl_list
 
@@ -1540,7 +1540,7 @@ State 90
     type_name             go to state 91
 
 
-State 91
+state 91
 
    45 member_decl: type_name . id_list ';'
 
@@ -1549,21 +1549,21 @@ State 91
     id_list  go to state 148
 
 
-State 92
+state 92
 
    68 symbol_name: '(' symbol_name ')' .
 
     $default  reduce using rule 68 (symbol_name)
 
 
-State 93
+state 93
 
    62 var_dlist: var_definition ',' var_dlist .
 
     $default  reduce using rule 62 (var_dlist)
 
 
-State 94
+state 94
 
    78 primary_expr: IDENTIFIER .
    82 func_name: IDENTIFIER .
@@ -1572,7 +1572,7 @@ State 94
     $default  reduce using rule 78 (primary_expr)
 
 
-State 95
+state 95
 
    75 opt_init: '=' expr .
    88 expr: expr . indexing
@@ -1624,14 +1624,14 @@ State 95
     indexing  go to state 140
 
 
-State 96
+state 96
 
    66 symbol_name: symbol_name '[' CONSTANT . ']'
 
     ']'  shift, and go to state 149
 
 
-State 97
+state 97
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1664,7 +1664,7 @@ State 97
     indexing  go to state 140
 
 
-State 98
+state 98
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1697,7 +1697,7 @@ State 98
     indexing  go to state 140
 
 
-State 99
+state 99
 
    56 while_clause: WHILE '(' . expr ')'
 
@@ -1717,35 +1717,35 @@ State 99
     expr           go to state 150
 
 
-State 100
+state 100
 
    53 jump_statement: GOTO IDENTIFIER . ';'
 
     ';'  shift, and go to state 151
 
 
-State 101
+state 101
 
    51 jump_statement: CONTINUE ';' .
 
     $default  reduce using rule 51 (jump_statement)
 
 
-State 102
+state 102
 
    52 jump_statement: BREAK ';' .
 
     $default  reduce using rule 52 (jump_statement)
 
 
-State 103
+state 103
 
    19 return_statement: RETURN ';' .
 
     $default  reduce using rule 19 (return_statement)
 
 
-State 104
+state 104
 
    18 return_statement: RETURN expr . ';'
    88 expr: expr . indexing
@@ -1796,14 +1796,14 @@ State 104
     indexing  go to state 140
 
 
-State 105
+state 105
 
    17 label_stmt: IDENTIFIER ':' .
 
     $default  reduce using rule 17 (label_stmt)
 
 
-State 106
+state 106
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1836,7 +1836,7 @@ State 106
     indexing  go to state 140
 
 
-State 107
+state 107
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1869,7 +1869,7 @@ State 107
     indexing  go to state 140
 
 
-State 108
+state 108
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1902,7 +1902,7 @@ State 108
     indexing  go to state 140
 
 
-State 109
+state 109
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -1935,7 +1935,7 @@ State 109
     indexing  go to state 140
 
 
-State 110
+state 110
 
    59 if_clause: IF '(' . expr ')'
 
@@ -1955,14 +1955,14 @@ State 110
     expr           go to state 153
 
 
-State 111
+state 111
 
    95 expr: '(' type_name . ')' expr
 
     ')'  shift, and go to state 154
 
 
-State 112
+state 112
 
    79 primary_expr: '(' expr . ')'
    88 expr: expr . indexing
@@ -2013,7 +2013,7 @@ State 112
     indexing  go to state 140
 
 
-State 113
+state 113
 
    30 block_statement: begin_sub '{' body '}' . end_sub
 
@@ -2022,21 +2022,21 @@ State 113
     end_sub  go to state 156
 
 
-State 114
+state 114
 
     6 body: body_statement body .
 
     $default  reduce using rule 6 (body)
 
 
-State 115
+state 115
 
    55 while_loop: while_clause body_statement .
 
     $default  reduce using rule 55 (while_loop)
 
 
-State 116
+state 116
 
    57 selection_statement: if_clause body_statement .
    58                    | if_clause body_statement . else_clause body_statement
@@ -2049,7 +2049,7 @@ State 116
     else_clause  go to state 158
 
 
-State 117
+state 117
 
    81 function_call: func_name '(' . actual_params_list ')'
 
@@ -2073,7 +2073,7 @@ State 117
     expr                go to state 161
 
 
-State 118
+state 118
 
   114 expr: expr OR_OP . expr
 
@@ -2093,7 +2093,7 @@ State 118
     expr           go to state 162
 
 
-State 119
+state 119
 
   113 expr: expr AND_OP . expr
 
@@ -2113,7 +2113,7 @@ State 119
     expr           go to state 163
 
 
-State 120
+state 120
 
   108 expr: expr EQ_OP . expr
 
@@ -2133,7 +2133,7 @@ State 120
     expr           go to state 164
 
 
-State 121
+state 121
 
   109 expr: expr NE_OP . expr
 
@@ -2153,7 +2153,7 @@ State 121
     expr           go to state 165
 
 
-State 122
+state 122
 
   106 expr: expr LE_OP . expr
 
@@ -2173,7 +2173,7 @@ State 122
     expr           go to state 166
 
 
-State 123
+state 123
 
   107 expr: expr GE_OP . expr
 
@@ -2193,7 +2193,7 @@ State 123
     expr           go to state 167
 
 
-State 124
+state 124
 
   102 expr: expr LSHFT_OP . expr
 
@@ -2213,7 +2213,7 @@ State 124
     expr           go to state 168
 
 
-State 125
+state 125
 
   103 expr: expr RSHFT_OP . expr
 
@@ -2233,7 +2233,7 @@ State 125
     expr           go to state 169
 
 
-State 126
+state 126
 
   115 expr: expr '=' . expr
 
@@ -2253,7 +2253,7 @@ State 126
     expr           go to state 170
 
 
-State 127
+state 127
 
   112 expr: expr '&' . expr
 
@@ -2273,7 +2273,7 @@ State 127
     expr           go to state 171
 
 
-State 128
+state 128
 
   111 expr: expr '^' . expr
 
@@ -2293,7 +2293,7 @@ State 128
     expr           go to state 172
 
 
-State 129
+state 129
 
   110 expr: expr '|' . expr
 
@@ -2313,7 +2313,7 @@ State 129
     expr           go to state 173
 
 
-State 130
+state 130
 
   105 expr: expr '<' . expr
 
@@ -2333,7 +2333,7 @@ State 130
     expr           go to state 174
 
 
-State 131
+state 131
 
   104 expr: expr '>' . expr
 
@@ -2353,7 +2353,7 @@ State 131
     expr           go to state 175
 
 
-State 132
+state 132
 
   101 expr: expr '-' . expr
 
@@ -2373,7 +2373,7 @@ State 132
     expr           go to state 176
 
 
-State 133
+state 133
 
   100 expr: expr '+' . expr
 
@@ -2393,7 +2393,7 @@ State 133
     expr           go to state 177
 
 
-State 134
+state 134
 
    97 expr: expr '*' . expr
 
@@ -2413,7 +2413,7 @@ State 134
     expr           go to state 178
 
 
-State 135
+state 135
 
    98 expr: expr '/' . expr
 
@@ -2433,7 +2433,7 @@ State 135
     expr           go to state 179
 
 
-State 136
+state 136
 
    99 expr: expr '%' . expr
 
@@ -2453,14 +2453,14 @@ State 136
     expr           go to state 180
 
 
-State 137
+state 137
 
    89 expr: expr '.' . IDENTIFIER
 
     IDENTIFIER  shift, and go to state 181
 
 
-State 138
+state 138
 
   116 indexing: '[' . expr ']'
 
@@ -2480,21 +2480,21 @@ State 138
     expr           go to state 182
 
 
-State 139
+state 139
 
    49 expression_statement: expr ';' .
 
     $default  reduce using rule 49 (expression_statement)
 
 
-State 140
+state 140
 
    88 expr: expr indexing .
 
     $default  reduce using rule 88 (expr)
 
 
-State 141
+state 141
 
    21 func_head: res_id begin_params '(' param_decl_list ')' . end_params
 
@@ -2503,7 +2503,7 @@ State 141
     end_params  go to state 183
 
 
-State 142
+state 142
 
    28 param_list: param_decl ',' . param_list
 
@@ -2522,7 +2522,7 @@ State 142
     type_name      go to state 88
 
 
-State 143
+state 143
 
    29 param_decl: type_name symbol_name .
    66 symbol_name: symbol_name . '[' CONSTANT ']'
@@ -2532,28 +2532,28 @@ State 143
     $default  reduce using rule 29 (param_decl)
 
 
-State 144
+state 144
 
    35 compound_type: type_type opt_ctype_name '{' member_decl_list '}' .
 
     $default  reduce using rule 35 (compound_type)
 
 
-State 145
+state 145
 
    44 opt_member_decl_list: member_decl_list .
 
     $default  reduce using rule 44 (opt_member_decl_list)
 
 
-State 146
+state 146
 
    42 member_decl_list: member_decl opt_member_decl_list .
 
     $default  reduce using rule 42 (member_decl_list)
 
 
-State 147
+state 147
 
    46 id_list: IDENTIFIER .
    47        | IDENTIFIER . ',' id_list
@@ -2563,21 +2563,21 @@ State 147
     $default  reduce using rule 46 (id_list)
 
 
-State 148
+state 148
 
    45 member_decl: type_name id_list . ';'
 
     ';'  shift, and go to state 186
 
 
-State 149
+state 149
 
    66 symbol_name: symbol_name '[' CONSTANT ']' .
 
     $default  reduce using rule 66 (symbol_name)
 
 
-State 150
+state 150
 
    56 while_clause: WHILE '(' expr . ')'
    88 expr: expr . indexing
@@ -2628,21 +2628,21 @@ State 150
     indexing  go to state 140
 
 
-State 151
+state 151
 
    53 jump_statement: GOTO IDENTIFIER ';' .
 
     $default  reduce using rule 53 (jump_statement)
 
 
-State 152
+state 152
 
    18 return_statement: RETURN expr ';' .
 
     $default  reduce using rule 18 (return_statement)
 
 
-State 153
+state 153
 
    59 if_clause: IF '(' expr . ')'
    88 expr: expr . indexing
@@ -2693,7 +2693,7 @@ State 153
     indexing  go to state 140
 
 
-State 154
+state 154
 
    95 expr: '(' type_name ')' . expr
 
@@ -2713,28 +2713,28 @@ State 154
     expr           go to state 189
 
 
-State 155
+state 155
 
    79 primary_expr: '(' expr ')' .
 
     $default  reduce using rule 79 (primary_expr)
 
 
-State 156
+state 156
 
    30 block_statement: begin_sub '{' body '}' end_sub .
 
     $default  reduce using rule 30 (block_statement)
 
 
-State 157
+state 157
 
    60 else_clause: ELSE .
 
     $default  reduce using rule 60 (else_clause)
 
 
-State 158
+state 158
 
    58 selection_statement: if_clause body_statement else_clause . body_statement
 
@@ -2787,21 +2787,21 @@ State 158
     expr                   go to state 84
 
 
-State 159
+state 159
 
    81 function_call: func_name '(' actual_params_list . ')'
 
     ')'  shift, and go to state 191
 
 
-State 160
+state 160
 
    83 actual_params_list: actual_params .
 
     $default  reduce using rule 83 (actual_params_list)
 
 
-State 161
+state 161
 
    85 actual_params: expr .
    86              | expr . ',' actual_params
@@ -2855,7 +2855,7 @@ State 161
     indexing  go to state 140
 
 
-State 162
+state 162
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -2905,7 +2905,7 @@ State 162
     indexing  go to state 140
 
 
-State 163
+state 163
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -2954,7 +2954,7 @@ State 163
     indexing  go to state 140
 
 
-State 164
+state 164
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -2998,7 +2998,7 @@ State 164
     indexing  go to state 140
 
 
-State 165
+state 165
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3042,7 +3042,7 @@ State 165
     indexing  go to state 140
 
 
-State 166
+state 166
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3082,7 +3082,7 @@ State 166
     indexing  go to state 140
 
 
-State 167
+state 167
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3122,7 +3122,7 @@ State 167
     indexing  go to state 140
 
 
-State 168
+state 168
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3160,7 +3160,7 @@ State 168
     indexing  go to state 140
 
 
-State 169
+state 169
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3198,7 +3198,7 @@ State 169
     indexing  go to state 140
 
 
-State 170
+state 170
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3250,7 +3250,7 @@ State 170
     indexing  go to state 140
 
 
-State 171
+state 171
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3298,7 +3298,7 @@ State 171
     indexing  go to state 140
 
 
-State 172
+state 172
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3345,7 +3345,7 @@ State 172
     indexing  go to state 140
 
 
-State 173
+state 173
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3391,7 +3391,7 @@ State 173
     indexing  go to state 140
 
 
-State 174
+state 174
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3431,7 +3431,7 @@ State 174
     indexing  go to state 140
 
 
-State 175
+state 175
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3471,7 +3471,7 @@ State 175
     indexing  go to state 140
 
 
-State 176
+state 176
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3507,7 +3507,7 @@ State 176
     indexing  go to state 140
 
 
-State 177
+state 177
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3543,7 +3543,7 @@ State 177
     indexing  go to state 140
 
 
-State 178
+state 178
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3576,7 +3576,7 @@ State 178
     indexing  go to state 140
 
 
-State 179
+state 179
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3609,7 +3609,7 @@ State 179
     indexing  go to state 140
 
 
-State 180
+state 180
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3642,14 +3642,14 @@ State 180
     indexing  go to state 140
 
 
-State 181
+state 181
 
    89 expr: expr '.' IDENTIFIER .
 
     $default  reduce using rule 89 (expr)
 
 
-State 182
+state 182
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3700,21 +3700,21 @@ State 182
     indexing  go to state 140
 
 
-State 183
+state 183
 
    21 func_head: res_id begin_params '(' param_decl_list ')' end_params .
 
     $default  reduce using rule 21 (func_head)
 
 
-State 184
+state 184
 
    28 param_list: param_decl ',' param_list .
 
     $default  reduce using rule 28 (param_list)
 
 
-State 185
+state 185
 
    47 id_list: IDENTIFIER ',' . id_list
 
@@ -3723,28 +3723,28 @@ State 185
     id_list  go to state 194
 
 
-State 186
+state 186
 
    45 member_decl: type_name id_list ';' .
 
     $default  reduce using rule 45 (member_decl)
 
 
-State 187
+state 187
 
    56 while_clause: WHILE '(' expr ')' .
 
     $default  reduce using rule 56 (while_clause)
 
 
-State 188
+state 188
 
    59 if_clause: IF '(' expr ')' .
 
     $default  reduce using rule 59 (if_clause)
 
 
-State 189
+state 189
 
    88 expr: expr . indexing
    89     | expr . '.' IDENTIFIER
@@ -3777,21 +3777,21 @@ State 189
     indexing  go to state 140
 
 
-State 190
+state 190
 
    58 selection_statement: if_clause body_statement else_clause body_statement .
 
     $default  reduce using rule 58 (selection_statement)
 
 
-State 191
+state 191
 
    81 function_call: func_name '(' actual_params_list ')' .
 
     $default  reduce using rule 81 (function_call)
 
 
-State 192
+state 192
 
    86 actual_params: expr ',' . actual_params
 
@@ -3812,21 +3812,21 @@ State 192
     expr           go to state 161
 
 
-State 193
+state 193
 
   116 indexing: '[' expr ']' .
 
     $default  reduce using rule 116 (indexing)
 
 
-State 194
+state 194
 
    47 id_list: IDENTIFIER ',' id_list .
 
     $default  reduce using rule 47 (id_list)
 
 
-State 195
+state 195
 
    86 actual_params: expr ',' actual_params .
 

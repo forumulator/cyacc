@@ -5,6 +5,43 @@
 #include <string.h>
 #include <stdio.h>
 
+typedef struct {
+  int type;
+  union {
+    int i; float f;
+  } val;
+} b10_val;
+
+/* Takes only positive const strings and returns a value */
+b10_val hex_val (char *str) {
+  int ipart = 0; int type = INT_TYPE;
+  b10_val ret; ret.type = UNDEF_TYPE;
+  int last; float fpart = 0;
+  if (!str)
+    return ret;
+  if (!(str[0] == '0' && str[1] == 'x'))
+    return ret;
+
+  int i; 
+  for (i = 0; str[i] && str[i] != '.'; i++) {
+    ipart = (ipart * 16) + (str[i] - '0');
+  }
+
+  if (str[i] == '.') {
+    last = strlen(str) - 1;
+    type = FLOAT_TYPE;
+    for (i = last; str[i] != '.'; --i)
+      fpart = (fpart + (str[i] - '0') ) / 16;
+  }
+  ret.type = type;
+  if (type == FLOAT_TYPE)
+    ret.val.f = ipart + fpart;
+  else
+    ret.val.i = ipart;
+
+  return ret;
+}
+
 /* TODO: Also add pointer deref. here */
 struct type
 arr_reduce_dimen (struct type t) {
@@ -52,6 +89,23 @@ create_const_expr (char *const_str) {
   return e;
 }
 
+struct expr_type 
+create_const_expr2 (const int c) {
+  struct expr_type e; e.type.ttype = UNDEF_TYPE;
+  int size = digits(c);
+  char *const_str = malloc(size * sizeof(char));
+  snprintf(const_str, size, "%d", c);
+  
+  e.type.ttype = BASIC_TYPE;
+  e.type.val.btype = INT_TYPE;
+  SET_NOT_ARRAY(e.type);
+  
+  e.ptr = CONST_PTR;
+  e.val.const_str = const_str;
+  SET_NOT_DEREF(e);
+  return e;
+}
+
 struct expr_type
 create_temp_expr (int temp, struct type t) {
   struct expr_type e;
@@ -79,19 +133,23 @@ create_sym_expr (symrec *sym) {
 
 int
 const_type (char *const_str) {
-    /* TODO: Maybe set the type
-    * from the lexer itself */
-    int i = 0;
-    while (const_str[i]) {
-      if (const_str[i] == '.')
-        return FLOAT_TYPE;
-      i++;
-    }
-    return INT_TYPE;
+  /* TODO: Maybe set the type
+  * from the lexer itself */
+  if (const_str[0] == '\'' && const_str[2] == '\'' && !const_str[3])
+    return CHAR_TYPE;
+  int i = 0;
+  while (const_str[i]) {
+    if (const_str[i] == '.')
+      return FLOAT_TYPE;
+    i++;
+  }
+  return INT_TYPE;
 }
 
 int 
 const_val (char *const_str) {
+  if (const_type(const_str) == CHAR_TYPE)
+    return const_str[1];
   // Add hex and octal support
   // Also stirng literals
   return atoi(const_str);
@@ -107,21 +165,51 @@ is_coercible (struct type to, struct type from) {
       return 2;
     return 1;
   }
-  if (to.ttype == PTR_TYPE && from.ttype == PTR_TYPE)
+  if (is_vector(to) && is_vector(from))
       return 1;
   return (is_equiv(to, from));
+}
+
+int
+is_lval_type (struct type t) {
+  if (is_array(t))
+    return 0;  
+  return 1;
+}
+
+void
+array_decay (struct expr_type *e) {
+  if (!is_array(e->type))
+    return;
+  struct type *t = malloc(sizeof(struct type));
+  *t = e->type;
+  e->type.ttype = PTR_TYPE;
+  e->type.val.ptr_to = t;
+  SET_NOT_ARRAY(e->type);
+  SET_NOT_ARRAY(*t);
+  return;
 }
 
 /* expressions are assignable only if they are an
  * indexing or deref or a symbol */
 int
 is_assignable (struct expr_type e) {
+  struct type t = e.type;
+  /* An array or pointer dereference 
+   * is a memory address, thus always
+   * assignable */
+  if (is_indexed(e) || is_derefd(e)) {
+    t = get_target_type(e);
+    return is_lval_type(t);
+  }
+  
   /* Is this a symbol table entry */
-  if (e.ptr == SYM_PTR)
-    return true;
-  if (is_indexed(e) || is_derefd(e))
-    return true;
-  return false;
+  if (e.ptr == SYM_PTR) {
+    return is_lval_type(t);
+  }
+  /* Otherwise not assignable, for 
+   * constants and other exprs */
+  return 0;
 }
 
 void 
@@ -136,6 +224,8 @@ copy_name (char **buf, char *name) {
 int 
 is_equiv(struct type t1, struct type t2) {
   int eq_flag = 1;
+  if (is_vector(t1) != is_vector(t2))
+    return 0;
   if (t1.ttype == UNDEF_TYPE || t2.ttype == UNDEF_TYPE)
     return 0;
   if (t1.ttype != t2.ttype)
@@ -241,29 +331,19 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   }
   else 
     name = (int *)buf;
-
-  // printf("238\n");
-
-  
   // if (is_derefd(e))
   //   name[pos++] = '*';
 
   if (e.ptr == CONST_PTR) {
-    // printf("245\n");
     pos += cstrcpy(name + pos, e.val.const_str) - 1;
-    // printf("245\n");
   }
   else if (e.ptr == QUAD_PTR) {
-    // printf("249\n");
     mf = 1;
     temp_var_name(e.val.quad_no, name + pos);
     pos += digits(e.val.quad_no) + 1;
-    // printf("253\n");
   }
   else {
-    // printf("255\n");
     pos += cstrcpy(name + pos, (e.val.sym)->name) - 1;
-    // printf("258\n");
   }
 
   /* if e is indexed, then this will be a[idx] */
@@ -273,10 +353,26 @@ assign_name_to_buf(char **buf, struct expr_type e) {
   //   pos += assign_name_to_buf((int **)(name + pos), *e.array.idx);
   //   name[pos++] = ']';
   // }
-  // printf("Befor access\n");
   name[pos + 1] = '\0';
-  // printf("After access\n");
   return pos;
+}
+
+struct type
+get_target_type (struct expr_type e) {
+  if (is_indexed(e)) {
+    if (is_array(e.type)) {
+      return arr_reduce_dimen(e.type);
+    }
+    else {
+      /* Structures member access */
+      return struct_get_elem(e.type.val.stype, e.deref.mem_oft);
+    }
+  }
+  else if (is_derefd(e)) {
+    return *(e.type.val.ptr_to);
+  } 
+  else
+    return e.type;
 }
 
 
@@ -353,7 +449,7 @@ void dump_tables() {
 
 void dump_sym_tables() {
   const char *DUMP_FILE = "sym_tables.txt";
-  printf("DUMPING");
+  printf("DUMPING all funcitons\n");
   FILE *tfile = fopen(DUMP_FILE, "w");
   if (!tfile) {
     printf("Unable to open file %s", DUMP_FILE);
