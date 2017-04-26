@@ -34,10 +34,7 @@ def separate():
 if __name__ == "__main__":
 	if not os.path.exists(SRC):
 	    os.makedirs(SRC)
-	# remove any new changes
-	system("git reset --hard HEAD")
 	# separate files into src files
 	separate()
-	remove(argv[0])
 	print(input())
 
