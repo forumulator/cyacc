@@ -52,6 +52,7 @@ struct k
 
 
 int main() {
+	qq[2];
 	printf("Val: %d\n", +'a');
 	func((int *)4); int t5;
 	int a[4][5]; int *b, *c;
