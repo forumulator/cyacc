@@ -1,9 +1,9 @@
 import os
-from os import remove, system
+from subprocess import DEVNULL, STDOUT, check_call
 from sys import argv
 
-INFILE = "cyacc.txt"
-SRC = "t1/"
+dINFILE = "cyacc.txt"
+dSRC = "t1/"
 
 
 def separate():
@@ -19,8 +19,6 @@ def separate():
 		if line[0:4] == "====":
 			if outf: outf.close()
 			filename = line.split("=")[-1].lstrip().rstrip()
-			# print(filename)
-			# input()
 			outf = open(SRC + filename, "w")
 			flag = 1
 			continue
@@ -32,9 +30,20 @@ def separate():
 
 
 if __name__ == "__main__":
+	global SRC, INFILE
+	SRC = input("Enter the targer directory")
+	INFILE = input("Enter concatted file name")
+	if not SRC:
+		SRC = dSRC
+	if not INFILE:
+		INFILE = dINFILE
+	# make dir if it doesn't exist
 	if not os.path.exists(SRC):
 	    os.makedirs(SRC)
+	# remove any breaking changes
+	check_call(["git", "reset" ,"--hard", "HEAD"], stdout = DEVNULL, stderr = DEVNULL)
 	# separate files into src files
 	separate()
-	print(input())
 
+# function : {}
+# Set-Alias -Name mv -Value : -Option AllScope

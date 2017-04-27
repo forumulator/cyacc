@@ -99,13 +99,6 @@ typedef union YYSTYPE
 /* Line 1676 of yacc.c  */
 #line 46 "src/gramm.y"
 
-  double t;
-  int val;
-
-
-/* Line 1676 of yacc.c  */
-#line 51 "src/gramm.y"
-
   double  val;  /* For returning numbers.                   */  
   char *id_name;
   char *t_name;
@@ -131,7 +124,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 135 "gen/y.tab.h"
+#line 128 "gen/y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

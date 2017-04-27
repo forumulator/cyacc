@@ -36,17 +36,12 @@ struct list *nested;
 struct scope_type scope;
 
 struct func_rec *active_func;
-// FILE *yyin;
+FILE *yyin;
 
 // Builtin type info.
 void init_globals();
 
 %}
-
-%union {
-  double t;
-  int val;
-}
 
 %union {
   double  val;  /* For returning numbers.                   */  

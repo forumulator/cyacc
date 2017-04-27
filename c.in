@@ -35,8 +35,9 @@ float func(int s,int n,float a)
   int *y4;
   b2 = y4;
 	struct bst b;
+  func3(b);
 	b.t = b.u + 5;
-	b2 = b1[5];
+	*b2 = b1[5];
 
 	while(n)
 	{	
