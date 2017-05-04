@@ -53,3 +53,6 @@ void dump_table (FILE *tfile, struct list *sym_table);
 void dump_struct_table ();
 
 struct type get_target_type (struct expr_type e);
+char *citostr (const int c);
+
+struct expr_type create_temp_expr (int temp, struct type t);

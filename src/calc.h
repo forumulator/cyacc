@@ -7,11 +7,12 @@
 #define INDEX_EXPR 2
 #define DEREF_EXPR 1
 
-#define SET_NOT_DEREF(x) (x).deref.type = NOT_DEREF ; (x).deref.idx = NULL
+#define SET_NOT_DEREF(x) (x).deref.type = NOT_DEREF; (x).deref.idx = NULL; (x).deref.mem_oft = -1;
+#define is_mem_ref(x) ((x).deref.type == INDEX_EXPR && (x).deref.mem_oft >= 0)
 #define is_indexed(x) ((x).deref.type == INDEX_EXPR)
 #define is_derefd(x) ((x).deref.type == DEREF_EXPR)
 
-#define is_compound(x) ((x).ttype == COMPOUND_TYPE)
+#define is_compound(x) ((x).ttype == COMPOUND_TYPE && !is_array(x))
 #define is_vector(x) (is_array(x) || is_pointer(x))
 #define is_array(x) ((x).array.n > 0)
 #define is_pointer(x) ((x).ttype == PTR_TYPE)

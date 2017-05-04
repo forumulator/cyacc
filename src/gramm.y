@@ -86,7 +86,7 @@ void init_globals();
 %type <patch> if_clause
 %type <dual_patch> else_clause 
 %type <loop> while_clause
-%type <e> expr primary_expr opt_init function_call
+%type <e> expr primary_expr opt_init function_call eval_expr
 %type <type> type_name compound_type
 %type <l> var_dlist var_definition actual_params actual_params_list
 %type <sym_npt> symbol_name
@@ -154,7 +154,7 @@ body_statement    : declaration_statement {}
 label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s:  ", $1); }
           ;
 
-return_statement  : RETURN expr ';' { out_return(&$2); }
+return_statement  : RETURN eval_expr ';' { out_return(&$2); }
                   | RETURN ';' { out_return(NULL); }
                   ;
 
@@ -633,13 +633,13 @@ func_name : IDENTIFIER { copy_name(&$$, $1); }
 
 actual_params_list  : actual_params { $$ = $1; }
                     | /* empty */ { $$ = NULL; }
-actual_params : expr
+actual_params : eval_expr
                 {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = $1;
                   $$ = list_create_elem(e);
                 }
-              | expr ',' actual_params
+              | eval_expr ',' actual_params
                 {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = $1;
@@ -648,11 +648,30 @@ actual_params : expr
                 }
               ;
 
+/* So that any delayed evaluation can be 
+ * output to a temp variable */
+eval_expr : expr 
+            {
+              if (is_indexed($1) || is_derefd($1))
+                $$ = get_vector_elem($1);
+              else
+                $$ = $1;
+            }
+          ;
+
 // Note that basic types can be inconverted , but compound types can't
 // i.e struct test t; int b = (int)t; is an error
 expr    : primary_expr { $$ = $1; }
-        | expr indexing { $$ = parse_indexed_expr($1, $2); }
-        | expr '.' IDENTIFIER { $$ = out_member_ref($1, $3); }
+        | expr indexing 
+          { 
+            if (is_array($1.type))
+              $$ = parse_indexed_expr($1, $2); 
+            else if (is_pointer($1.type))
+              $$ = parse_deref_expr($1, $2);
+            else
+              error("subscripted value is neither array nor pointer nor vector");
+          }
+        | expr '.' IDENTIFIER { $$ = parse_member_ref($1, $3); }
         | '!' expr  { parse_unary_expr(&$$, $2, '!'); }
         | '~' expr  { parse_unary_expr(&$$, $2, '~'); }
         | '-' expr %prec UMINUS  { parse_unary_expr(&$$, $2, '-'); }
@@ -686,16 +705,12 @@ expr    : primary_expr { $$ = $1; }
           }
         | '*' expr %prec DEREF
           {
-            /* Delayed eval */
-            if (is_indexed($2) || is_derefd($2)) {
-              $2 = get_vector_elem($2);
-            }
-            $$ = $2;
-            if (!is_array($2.type) && !is_pointer($2.type))
+            if (is_array($2.type))
+              $$ = parse_indexed_expr($2, create_const_expr2(0));
+            else if (is_pointer($2.type))
+              $$ = parse_deref_expr($2, create_const_expr2(0));
+            else
               error("Attempting to dereference non-pointer");
-            SET_NOT_DEREF($$);
-            $$.deref.type = DEREF_EXPR;
-            /* deref'd whenever used */
           }
         | expr '*' expr  { parse_expr(&$$, $1, $3, '*'); }
         | expr '/' expr  { parse_expr(&$$, $1, $3, '/'); }
@@ -1040,61 +1055,60 @@ make_quad_with_const (struct expr_type e, char *const_str, int op) {
 
 void
 make_quad (struct expr_type e1, struct expr_type e2, int op) {        
-    char *s1 = NULL, *s2 = NULL;
-    assign_name_to_buf(&s1, e1);
-    assign_name_to_buf(&s2, e2);   
-    // printf("%s, %s\n", s1, s2);
-    make_quad_by_name(s1, s2, op);
-
-    free(s1); free(s2);
-
-    return;
+  char *s1 = NULL, *s2 = NULL;
+  assign_name_to_buf(&s1, e1);
+  assign_name_to_buf(&s2, e2);   
+  make_quad_by_name(s1, s2, op);
+  free(s1); free(s2);
+  return;
 }
 
 /* TODO: Change */
 struct expr_type
-out_member_ref (struct expr_type e, char *mem) {
+parse_member_ref (struct expr_type e, char *mem) {
   struct expr_type ret = e;
-  if (is_indexed(e) || is_derefd(e))
-    e = get_vector_elem(e);
-  if (e.type.ttype != COMPOUND_TYPE)
+  if (!is_compound(e.type))
     error("request for member in something not a structure or union");
 
   int oft = struct_calc_offset(e.type.val.stype, mem);
   if (oft == -1)
     error("struct has no member named this");
+  ret.type = struct_get_elem(e.type.val.stype, oft);
 
-  ret.deref.type = INDEX_EXPR;
-  ret.deref.idx = NULL; ret.deref.mem_oft = oft;
-
+  if (is_indexed(e)) {
+    /* Case of a.b.c */
+    if (is_mem_ref(e))
+      ret.deref.mem_oft += oft;
+    /* Case of a[5].e */
+    else {
+      char *const_str = citostr(oft);
+      *(ret.deref.idx) = create_temp_expr(next_quad, 
+                          basic_types[INT_TYPE].t);
+      make_quad_with_const(*(e.deref.idx), const_str, '+');
+    }
+  }
+  else {
+    if (!is_derefd(e)) {
+      /* Get address if not a pointer */
+      int temp = next_quad;
+      out_addr_of(e);
+      ret = create_temp_expr(temp, ret.type);
+    }
+    SET_NOT_DEREF(ret);
+    ret.deref.type = INDEX_EXPR;
+    ret.deref.mem_oft = oft;
+  }
   return ret;
 }
 
+/* Multiplies the offset of a vector by the size of
+ * target. Thus, for out_vector_offset(*t, 2),
+ * we would get _t0 = 2 * sizeof(*t) and so on */
 void
 out_vector_offset (struct expr_type e, struct expr_type idx) {
-  char *const_str; char *mname = NULL; 
-
-  int oft_temp = next_quad;
-  int sz_target;
-  if (is_pointer(e.type)) {
-    sz_target = size_of(*e.type.val.ptr_to);
-  }
-
-  else {
-
-    struct array_type *t = &e.type.array;
-    sz_target = (t->size/t->dimen[0]) * base_size_of(e.type);
-
-  }
-  int d = digits(sz_target);
-  const_str = malloc(d * sizeof(int));
-
-  snprintf(const_str, d, "%d", sz_target);
-  assign_name_to_buf(&mname, idx);
-
-  make_quad_by_name(mname, const_str, '*');
-
-  free(mname);
+  char *const_str = citostr(size_of_target(e.type));
+  make_quad_with_const(idx, const_str, '*');
+  free(const_str);
   return;
 }
 
@@ -1173,38 +1187,35 @@ out_deref_by_index (struct expr_type e) {
   free(base);
 }
 
-/* e contains the details of the dereference */
+void
+out_addr_of (struct expr_type e) {
+  char *name = NULL;
+  assign_name_to_buf(&name, e);
+  fprintf(outfile, "_t%d = &%s\n", next_quad++, name);
+  free(name);
+}
+
+/* e.deref contains the details of the dereference */
 struct expr_type
 get_vector_elem (struct expr_type e) {
   struct expr_type ret;
   SET_NOT_DEREF(ret);
   ret.ptr = QUAD_PTR;
-  ret.val.quad_no = next_quad; 
-  if (is_array(e.type)) {
-    if (is_derefd(e)) {
-      out_const_index(e, 0);
-    }
-    else {
-      out_index(e);
-      ret.val.quad_no++;
-    }
-    ret.type = arr_reduce_dimen(e.type);
-  }
-  else if (is_pointer(e.type)) {
-    /* expr is a pointer type */
-    if (is_derefd(e))
-      out_deref(e);
-    else {
-      ret.val.quad_no += 2;
-      out_deref_by_index(e);
-    }
-    ret.type = *(e.type.val.ptr_to);
+  ret.val.quad_no = next_quad;
+  ret.type = e.type;
+  if (is_derefd(e)) {
+    out_deref(e);
+  } 
+  else if (is_mem_ref(e)) {
+    /* Struct member ref */
+    out_const_index(e, e.deref.mem_oft);
   }
   else {
-    int oft = e.deref.mem_oft;
-    out_const_index(e, oft);
-    ret.type = struct_get_elem(e.type.val.stype, oft);
+    /* Array indexing */
+    out_index(e);
+    ret.val.quad_no++;
   }
+  free(e.deref.idx);
   return ret;
 }
 
@@ -1215,48 +1226,75 @@ void out_label () {
   free(ltext);
 }
 
-
+/* Compound index in case of accesses like
+ * a[2][3], and a.x[2] */
 struct expr_type
-compound_indexing (struct expr_type e, struct expr_type idx) {
+cmpnd_idx (struct expr_type e, struct expr_type idx) {
   struct expr_type ret = e;
-  int incr_size = e.type.array.dimen[1];
-  char const_str[MAX_INT_SIZE];  snprintf(const_str, MAX_INT_SIZE, "%d", incr_size);
   int t = next_quad;
-  make_quad_with_const(*(e.deref.idx), const_str, '*');
-  char temp[20];
-  temp_var_name(t, temp);
-  int final_quad = next_quad;
-  make_quad_with_const(idx, temp, '+');
+  out_vector_offset(e, idx);
 
-  ret.type = arr_reduce_dimen(ret.type);
-  ret.deref.idx->ptr = QUAD_PTR;
-  ret.deref.idx->val.quad_no = final_quad;
+  /* Add the old index to the new idx */
+  char temp[20]; temp_var_name(t, temp);
+  int final_quad = next_quad;
+  make_quad_with_const(*(e.deref.idx), temp, '+');
+
+  ret.type = arr_reduce_dimen(e.type);
+  ret.deref.idx = malloc(sizeof(struct expr_type));
+  /* Make new int idx */
+  *(ret.deref.idx) = create_temp_expr(final_quad, basic_types[INT_TYPE].t);
 
   return ret;
 }
 
+/* Change const offset to idx expr */
+struct expr_type
+cmpnd_idx2 (struct expr_type e, struct expr_type idx) {
+  *(e.deref.idx) = create_const_expr(citostr(e.deref.mem_oft));
+  e.deref.mem_oft = -1;
+  return cmpnd_idx(e, idx);
+}
+
+/* Carry forward the indexing information in e.deref
+ * Only array indexing things are passed here, 
+ * pointer indexes go to parse_deref_expr */
 struct expr_type
 parse_indexed_expr (struct expr_type e, struct expr_type idx) {
   struct expr_type ret;
   if (is_indexed(e)) {
-    if (is_array(e.type)) {
-      if (e.type.array.n <= 1)
-        error("subscripted value is neither array nor pointer nor vector");
-      return compound_indexing(e, idx);
+    if (is_mem_ref(e)) {
+      return cmpnd_idx2(e, idx);
     }
-    else {
-      e = get_vector_elem(e);
-    }
+    else
+      return cmpnd_idx(e, idx);
   }
+  /* This will be only encountered in case of 
+   * defs like int (*a)[5]; otherwise they'll go to
+   * parse_pointer_deref */
   if (is_derefd(e))
     e = get_vector_elem(e);
-  if (!is_array(e.type) && !is_pointer(e.type))
-    error("subscripted value is neither array nor pointer nor vector");
-  ret = e; ret.deref.type = INDEX_EXPR;
+
+  /* Indexed for a simple array */
+  ret = e;
+  ret.type = arr_reduce_dimen(e.type);
+  ret.deref.type = INDEX_EXPR;
   ret.deref.idx = malloc(sizeof(struct expr_type));
   *(ret.deref.idx) = idx;
 
   return ret;
+}
+
+
+/* For expressions of the type *(p + 5), this outputs
+ * _t0 = p + 5 */
+struct expr_type
+parse_deref_expr (struct expr_type e, struct expr_type idx) {
+  // Create a temp expression of the same type
+  struct expr_type ne = create_temp_expr(next_quad, e.type);
+  // Output _t0 = p + 5
+  out_vector_offset(e, idx);
+  ne.deref.type = DEREF_EXPR;
+  return ne;
 }
 
 int 
@@ -1268,7 +1306,10 @@ sout_expr_with_deref (char *buf, struct expr_type e) {
     return sprintf(buf, "*%s ", name);
   }
   else if (is_indexed(e)) {
-    if (is_array(e.type)) {
+    if (is_mem_ref(e)) {
+      return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
+    }
+    else {
       symrec *sym = getsym(active_func, name, scope);
       out_vector_offset(e, *(e.deref.idx));
       fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
@@ -1276,9 +1317,6 @@ sout_expr_with_deref (char *buf, struct expr_type e) {
       fprintf(outfile, "\t exit 1\n");
       out_label();
       return sprintf(buf, "\t %s[_t%d] ", name, t1);
-    }
-    else {
-      return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
     }
   }
   else {
@@ -1304,8 +1342,7 @@ out_assign_expr (struct expr_type lval, struct expr_type rval) {
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
   struct expr_type result; 
-  struct type lt = get_target_type(lval), rt = get_target_type(rval);
-  // printf("%d: %d, %d: %d\n", lval.type.ttype, lt.val.btype, rt.ttype, rt.val.btype);
+  struct type lt = lval.type, rt = rval.type;
   if (is_void_type(rt))
     error("void value not ignored as it ought to be");
   if (!is_assignable(lval))

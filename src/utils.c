@@ -199,7 +199,6 @@ is_assignable (struct expr_type e) {
    * is a memory address, thus always
    * assignable */
   if (is_indexed(e) || is_derefd(e)) {
-    t = get_target_type(e);
     return is_lval_type(t);
   }
   
@@ -405,6 +404,20 @@ cstrcpy (char *dest, char *src) {
   *dest = 0;
   return nchars + 1;
 }
+
+char *citostr (const int c) {
+  int d = digits(c);
+  char *str = malloc(d * sizeof(char));
+  snprintf(str, d, "%d", c);
+  return str;
+}
+
+// char *cftostr (const float f) {
+//   int d = digits(c);
+//   char *str = malloc(d * sizeof(char));
+//   snprintf(str, d, "%d", c);
+//   return str;
+// }
 
 void print_type(struct type t) {
   struct type *p = &t;

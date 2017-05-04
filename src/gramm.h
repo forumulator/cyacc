@@ -51,7 +51,7 @@ int out_jmp(struct expr_type *e, void *label, int type);
 void backpatch(int label, int patch);
 void out_assign(char *name, struct expr_type expr);
 void out_index (struct expr_type e);
-struct expr_type out_member_ref (struct expr_type e, char *mem);
+struct expr_type parse_member_ref (struct expr_type e, char *mem);
 void parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op);
 void parse_unary_expr (struct expr_type *result, 
@@ -65,8 +65,11 @@ void make_two_quad (struct expr_type e1, int op);
 void out_gen_quad (struct expr_type e);
 
 struct expr_type get_vector_elem (struct expr_type e);
-struct expr_type compound_indexing (struct expr_type e, struct expr_type idx);
+struct expr_type cmpnd_idx (struct expr_type e, struct expr_type idx);
+struct expr_type cmpnd_idx2 (struct expr_type e, struct expr_type idx);
 struct expr_type parse_indexed_expr (struct expr_type e, struct expr_type idx);
+struct expr_type parse_deref_expr (struct expr_type e, struct expr_type idx);
+
 int sout_expr_with_deref (char *buf, struct expr_type e);
 void out_assign_expr (struct expr_type lval, struct expr_type rval);
 void parse_assignment (struct expr_type lval, struct expr_type rval);

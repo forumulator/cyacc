@@ -180,6 +180,8 @@ create_alias (char *name, struct type t) {
   return;
 }
 
+/* Get the size of type t, including 
+ * array dimensions etc. */
 int 
 size_of (struct type t) {
   return t.array.size * base_size_of(t);
@@ -188,14 +190,16 @@ size_of (struct type t) {
   // else return -1;
 } 
 
+/* Get the size of target pointed to */
 int size_of_target (struct type t) {
   if (is_array(t))
-    return base_size_of(t);
+    return (t.array.size/t.array.dimen[0] * base_size_of(t));
   if (is_pointer(t))
     return size_of(*(t.val.ptr_to));
   return size_of(t);
 }
 
+/* Size of type without array etc. */
 int
 base_size_of (struct type t) {
   int size;

@@ -1,8 +1,0 @@
-FUNCTION func3() BEGIN:
-_L1: 
-FUNCTION END
-
-
-FUNCTION func() BEGIN:
-_L2: 
-	 	 b2 = 	 y4
