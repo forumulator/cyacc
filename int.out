@@ -1,0 +1,256 @@
+FUNCTION func3() BEGIN:
+_L1: 
+FUNCTION END
+
+
+FUNCTION func() BEGIN:
+_L2: 
+	 _t0 = 0 * 4
+	 _t1 = y4 + _t0
+	 *_t1  = 	 5
+	 	 b2 = 	 y4
+	 	 _t2 = 	 3
+if (_t2 < 4) goto _L3
+	exit
+_L3: 
+	 _t3 = _t3 + 4
+	 	 _t4 = 	 3
+if (_t4 < 5) goto _L4
+	exit
+_L4: 
+	 _t5 = 3 * 4
+	 _t6 = _t3 + _t5
+	 	 _t7 = 	 2
+if (_t7 < 4) goto _L5
+	exit
+_L5: 
+	 _t8 = _t8 + 0
+	 _t9 = _t6 * 4
+_L6: 
+	 _t10 = _t8 * 4
+_L7: 
+	 	 r1[_t9]  = 	 r1[_t10] 
+	 	 _t11 = 	 2
+if (_t11 < 4) goto _L8
+	exit
+_L8: 
+	 _t12 = _t12 + 24
+	 _t13 = _t13 + 8
+	 _t14 = _t13 * 4
+_L9: 
+	 	 b1[_t14]  = 	 5
+_L10: 
+	 if ( n == 0 )
+	 goto _L13   
+_L11: 
+	 j = 0.01
+	 _t15 = a * s
+	 _t16 = _t15 + j
+	 _t17 = _t16 == 0.53
+	 if ( _t17 == 0 )
+	 goto _L12   
+	 
+	 goto _L13   
+_L12: 
+	 _t18 = n - 1
+	 n = _t18
+	 _t19 = j + 1
+	 j = _t19
+	 
+	 goto _L10
+_L13: 
+	 _t20 = n == 0
+	 if ( _t20 == 0 )
+	 goto _L15   
+_L14: 
+	 _t21 = k + 1
+	 	 k = 	 _t21
+	 return 0.21
+_L15: 
+	 return 0.15
+FUNCTION END
+
+
+FUNCTION test_array_of_structures() BEGIN:
+_L16: 
+	 	 _t22 = 	 50
+if (_t22 < 100) goto _L17
+	exit
+_L17: 
+	 	 _t23 = 	 50
+if (_t23 < 100) goto _L18
+	exit
+_L18: 
+	 _t24 = 50 * 24
+_L19: 
+	 _t25 = 50 * 24
+_L20: 
+	 	 brr[_t24]  = 	 arr[_t25] 
+FUNCTION END
+
+
+FUNCTION dont_do_anything() BEGIN:
+_L21: 
+FUNCTION END
+
+
+FUNCTION give_next() BEGIN:
+_L22: 
+	 _t26 = a != 'z'
+	 if ( _t26 == 0 )
+	 goto _L23   
+	 _t27 = a + 1
+	 return _t27
+	 
+	 goto _L24   
+_L23: 
+	 return 'a'
+_L24: 
+FUNCTION END
+
+
+FUNCTION square_root() BEGIN:
+_L25: 
+	 l = 0
+	 h = s
+	 _t28 = l < h
+_L26: 
+	 if ( _t28 == 0 )
+	 goto _L30   
+_L27: 
+	 _t29 = l + h
+	 _t30 = _t29 / 2
+	 	 m = 	 _t30
+	 _t31 = m * m
+	 _t32 = _t31 < s
+	 if ( _t32 == 0 )
+	 goto _L28   
+	 	 h = 	 m
+	 
+	 goto _L28   
+_L28: 
+	 	 l = 	 m
+_L29: 
+	 
+	 goto _L26
+_L30: 
+	 return l
+FUNCTION END
+
+
+FUNCTION xor() BEGIN:
+_L31: 
+	 i = 0
+	 	 i = 	 100
+_L32: 
+	 if ( i == 0 )
+	 goto _L36   
+_L33: 
+	 _t33 = i - 1
+	 	 i = 	 _t33
+	 	 _t34 = 	 i
+if (_t34 < 100) goto _L34
+	exit
+_L34: 
+	 _t35 = i * 4
+_L35: 
+	 	 arr[_t35]  = 	 i
+	 
+	 goto _L32
+_L36: 
+	 	 i = 	 100
+	 	 j = 	 100
+_L37: 
+	 if ( i == 0 )
+	 goto _L48   
+_L38: 
+	 _t36 = i - 1
+	 	 i = 	 _t36
+_L39: 
+	 if ( j == 0 )
+	 goto _L47   
+_L40: 
+	 _t37 = j - 1
+	 	 j = 	 _t37
+	 	 _t38 = 	 i
+if (_t38 < 100) goto _L41
+	exit
+_L41: 
+	 	 _t39 = 	 i
+if (_t39 < 100) goto _L42
+	exit
+_L42: 
+	 	 _t40 = 	 j
+if (_t40 < 100) goto _L43
+	exit
+_L43: 
+	 _t41 = i * 4
+	 if ( _t41 < 400 ) goto _L44
+	 exit 1
+_L44: 
+	 _t42 = arr [_t41]
+	 _t43 = j * 4
+	 if ( _t43 < 400 ) goto _L45
+	 exit 1
+_L45: 
+	 _t44 = arr [_t43]
+	 _t45 = _t42 * _t44
+	 _t46 = i * 4
+_L46: 
+	 	 arr[_t46]  = 	 _t45
+	 
+	 goto _L39
+_L47: 
+	 
+	 goto _L37
+_L48: 
+	 	 _t47 = 	 0
+if (_t47 < 100) goto _L49
+	exit
+_L49: 
+	 _t48 = 0 * 4
+	 if ( _t48 < 400 ) goto _L50
+	 exit 1
+_L50: 
+	 _t49 = arr [_t48]
+	 return _t49
+FUNCTION END
+
+
+FUNCTION main() BEGIN:
+_L51: 
+	 param 5
+	 param _result
+	 call func3, 1
+	 _t50 = _result
+	 param 1
+	 param 15
+	 param 'a'
+	 param _result
+	 call func, 3
+	 _t51 = _result
+	 _t52 = _t51 + 2
+	 ans = _t52
+	 u = 0
+	 _t53 = u < 100
+_L52: 
+	 if ( _t53 == 0 )
+	 goto _L54   
+_L53: 
+	 _t54 = u + 1
+	 	 u = 	 _t54
+	 
+	 goto _L52
+_L54: 
+	 call dont_do_anything, 0
+	 	 mm = 	 ll
+	 _t55 = 11 + u
+	 	 u = 	 _t55
+	 param 's'
+	 param _result
+	 call give_next, 1
+	 _t56 = _result
+	 uu = _t56
+FUNCTION END
+
+

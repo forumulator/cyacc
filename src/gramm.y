@@ -92,7 +92,7 @@ void init_globals();
 %type <sym_npt> symbol_name
 %type <ttype> type_type
 %type <t_name> opt_ctype_name ctype_name;
-%type <tlist> opt_member_decl_list member_decl_list member_decl id_list
+%type <tlist> opt_member_decl_list member_decl_list member_decl memb_list
 %type <e> indexing
 
 // %precedence mult_op
@@ -247,7 +247,6 @@ begin_sub :   /* eps */
                 // Push scope info onto stack
                 list_prepend_elem(&nested, 
                   list_create_elem((void *)label_no));
-                // printf("lvl: %d\n", scope.level);
                 scope.level++;
                 out_label();
               }
@@ -257,8 +256,6 @@ end_sub   :   /* eps */
               {
                 void *data = list_pop_front(&nested);
                 scope.label = (int) data;
-                // printf("lvle: %d\n", scope.level);
-
                 // delsym_scope(scope.level);
                 scope.level--;
               }
@@ -273,18 +270,18 @@ type_definition : aliasing ';'
  * combining the two */
 /* TODO: Check for duplicate members */
 compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
-                    { 
-                      if (get_struct($2))
-                        error("Redefinition of struct");
-                      /* TODO: Differentiate b/w STRUCT and
-                       * UNION */
-                      $$.val.stype = create_struct($2, $4, false);
-                      $$.ttype = COMPOUND_TYPE;
-                      SET_NOT_ARRAY($$);
-                      // If it is not null string
-                      if ($2[0])
-                        free($2);
-                    }
+                  { 
+                    if (get_struct($2))
+                      error("Redefinition of struct");
+                    /* TODO: Differentiate b/w STRUCT and
+                     * UNION */
+                    $$.val.stype = create_struct($2, $4, false);
+                    $$.ttype = COMPOUND_TYPE;
+                    SET_NOT_ARRAY($$);
+                    // If it is not null string
+                    if ($2[0])
+                      free($2);
+                  }
                 | type_type ctype_name
                   {
 
@@ -292,7 +289,7 @@ compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
                     if (!s)  {
                       // Forward declaration
                       $$.val.stype = create_struct($2, NULL, true);
-                      $$.ttype = INCOMPL_TYPE;                      
+                      $$.ttype = COMPOUND_TYPE;                      
                     }
                     else {
                       $$.ttype = COMPOUND_TYPE;
@@ -335,29 +332,52 @@ opt_member_decl_list: /* empty */ { $$ = NULL; }
                     | member_decl_list { $$ = $1; }
                     ;
 
-member_decl : type_name id_list ';'
+member_decl : type_name memb_list ';'
               {
-                // Set types for all members
-                struct memb_list *mem = $2;
-                if (size_of($1) == -1)
-                  error("member has incomplete type");
-                while (mem) {
-                  mem->type = $1;
-                  mem = mem->next; 
+                struct memb_list *node = $2;
+                /* TODO: Check for completeness of 
+                  type here */
+                if (is_void_type($1))
+                  error("Structure has Void type member");
+
+                // Backpatch
+                while (node) {
+                  struct type *t = &(node->type);
+
+                  if (t->ttype != PTR_TYPE && 
+                      is_incompl_type($1))
+                    error("Structure Member has incomplete type");
+                  // Travese the list of ptr types
+                  while (t->ttype == PTR_TYPE)
+                    t = t->val.ptr_to;
+                  struct array_type arr = t->array;
+                  *t = $1;
+                  t->array = arr;
+
+                  // TODO: Relloc in the entire ptr_to linked list
+                  // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
+                  node = node->next;
                 }
                 $$ = $2;
               }
             ;
 
-id_list         : IDENTIFIER
-                  {
-                    $$ = create_member($1, NULL);
-                  }
-                | IDENTIFIER ',' id_list
-                  {
-                    $$ = create_member($1, $3); 
-                  }
-                ;
+memb_list : symbol_name ',' memb_list 
+            { 
+              // Check for already defined members
+              // symrec *rec = getsym(active_func, $1.name, scope);
+              // if (rec && rec->scope.level == scope.level) {
+              //   error("Redefinition of symbol");
+              // }
+              $$ = create_member($1.name, $1.type, $3);
+              free($1.name);
+            }
+          | symbol_name
+            {
+              $$ = create_member($1.name, $1.type, NULL);
+              free($1.name);
+            }
+        ;
 
 aliasing  : TYPEDEF type_name IDENTIFIER
             { 
@@ -451,33 +471,26 @@ declaration_statement : type_name var_dlist ';'
                           struct symrec *sym;
                           /* TODO: Check for completeness of 
                             type here */
-                          if ($1.ttype == UNDEF_TYPE)
-                            error("incomplete type");
-                          if (is_void_type($1))
-                            error("Void type varible declaration");
 
                           // Backpatch
                           while (node) {
                             sym = (symrec *) node->data;
-                            struct array_type arr = sym->type.array;
-                            if (sym->type.ttype == INCOMPL_TYPE) {
-                              if ($1.ttype == INCOMPL_TYPE)
-                                error("incomplete type for varibale");
-                              sym->type = $1;
-                            }
-                            else if (sym->type.ttype == PTR_TYPE) {
-                              struct type *t = sym->type.val.ptr_to;
-                              // Travese the list of ptr types
-                              while (t->ttype == PTR_TYPE)
-                                t = t->val.ptr_to;
-                              // Set the type of the last node to the basic
-                              // or compound type that is type_name
-                              if (t->ttype == INCOMPL_TYPE) {
-                                *t = $1;
-                              }                              
-                            }
-                            sym->type.array = arr;
-                            print_type(sym->type);
+
+                            if (sym->type.ttype != PTR_TYPE)
+                              if (is_incompl_type($1))
+                                error("Variable has incomplete type");
+                              else if (is_void_type($1))
+                                error("Void type varible declaration");
+
+                            struct type *t = &(sym->type);
+                            // Travese the list of ptr types
+                            while (t->ttype == PTR_TYPE)
+                              t = t->val.ptr_to;
+
+                            struct array_type arr = t->array;
+                            *t = $1;
+                            t->array = arr;
+
                             // TODO: Relloc in the entire ptr_to linked list
                             // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
                             node = node->next;
@@ -485,7 +498,7 @@ declaration_statement : type_name var_dlist ';'
                         }
                       ;
           
-var_dlist : var_definition ',' var_dlist {list_prepend_elem(&$3, $1); $$ = $3; }
+var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; }
           | var_definition { $$ = $1; }
           ;
 
@@ -664,8 +677,9 @@ eval_expr : expr
 expr    : primary_expr { $$ = $1; }
         | expr indexing 
           { 
-            if (is_array($1.type))
+            if (is_array($1.type)) {
               $$ = parse_indexed_expr($1, $2); 
+            }
             else if (is_pointer($1.type))
               $$ = parse_deref_expr($1, $2);
             else
@@ -1243,13 +1257,13 @@ cmpnd_idx (struct expr_type e, struct expr_type idx) {
   ret.deref.idx = malloc(sizeof(struct expr_type));
   /* Make new int idx */
   *(ret.deref.idx) = create_temp_expr(final_quad, basic_types[INT_TYPE].t);
-
   return ret;
 }
 
 /* Change const offset to idx expr */
 struct expr_type
 cmpnd_idx2 (struct expr_type e, struct expr_type idx) {
+  e.deref.idx = malloc(sizeof(struct expr_type));
   *(e.deref.idx) = create_const_expr(citostr(e.deref.mem_oft));
   e.deref.mem_oft = -1;
   return cmpnd_idx(e, idx);
@@ -1261,12 +1275,18 @@ cmpnd_idx2 (struct expr_type e, struct expr_type idx) {
 struct expr_type
 parse_indexed_expr (struct expr_type e, struct expr_type idx) {
   struct expr_type ret;
+  out_assign_expr(create_temp_expr(next_quad, idx.type), idx);
+  fprintf(outfile, "if (_t%d < %d) goto _L%d\n\texit\n", next_quad++, 
+          e.type.array.size, label_no);
+  out_label();
+
   if (is_indexed(e)) {
     if (is_mem_ref(e)) {
       return cmpnd_idx2(e, idx);
     }
-    else
+    else {
       return cmpnd_idx(e, idx);
+    }
   }
   /* This will be only encountered in case of 
    * defs like int (*a)[5]; otherwise they'll go to
@@ -1280,7 +1300,6 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
   ret.deref.type = INDEX_EXPR;
   ret.deref.idx = malloc(sizeof(struct expr_type));
   *(ret.deref.idx) = idx;
-
   return ret;
 }
 
@@ -1290,9 +1309,11 @@ parse_indexed_expr (struct expr_type e, struct expr_type idx) {
 struct expr_type
 parse_deref_expr (struct expr_type e, struct expr_type idx) {
   // Create a temp expression of the same type
-  struct expr_type ne = create_temp_expr(next_quad, e.type);
+  struct expr_type plus = create_temp_expr(next_quad, basic_types[INT_TYPE].t);
   // Output _t0 = p + 5
   out_vector_offset(e, idx);
+  struct expr_type ne = create_temp_expr(next_quad, e.type);
+  make_quad(e, plus, '+');
   ne.deref.type = DEREF_EXPR;
   return ne;
 }
@@ -1310,11 +1331,10 @@ sout_expr_with_deref (char *buf, struct expr_type e) {
       return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
     }
     else {
-      symrec *sym = getsym(active_func, name, scope);
       out_vector_offset(e, *(e.deref.idx));
-      fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
-          sym->type.array.size * base_size_of(sym->type), label_no);
-      fprintf(outfile, "\t exit 1\n");
+      // fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
+      //     sym->type.array.size * base_size_of(sym->type), label_no);
+      // fprintf(outfile, "\t exit 1\n");
       out_label();
       return sprintf(buf, "\t %s[_t%d] ", name, t1);
     }

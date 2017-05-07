@@ -79,7 +79,6 @@ create_const_expr (char *const_str) {
   struct expr_type e; e.type.ttype = UNDEF_TYPE;
   if (!const_str)
     return e;
-
   e.type.ttype = BASIC_TYPE;
   e.type.val.btype = const_type(const_str);
   SET_NOT_ARRAY(e.type);
@@ -92,14 +91,12 @@ create_const_expr (char *const_str) {
 struct expr_type 
 create_const_expr2 (const int c) {
   struct expr_type e; e.type.ttype = UNDEF_TYPE;
-  int size = digits(c);
+  int size = digits(c) + 1;
   char *const_str = malloc(size * sizeof(char));
   snprintf(const_str, size, "%d", c);
   
-  e.type.ttype = BASIC_TYPE;
-  e.type.val.btype = INT_TYPE;
-  SET_NOT_ARRAY(e.type);
-  
+  e.type = basic_types[INT_TYPE].t;
+
   e.ptr = CONST_PTR;
   e.val.const_str = const_str;
   SET_NOT_DEREF(e);
@@ -240,6 +237,17 @@ is_equiv(struct type t1, struct type t2) {
   }
   else return (t1.val.btype == t2.val.btype);
 
+}
+
+int
+is_incompl_type (struct type t) {
+  if (t.ttype == INCOMPL_TYPE ||
+      t.ttype == UNDEF_TYPE)
+    return 1;
+  if (t.ttype == COMPOUND_TYPE && 
+      t.val.stype->size == -1)
+    return 1;
+  return 0;
 }
 
 

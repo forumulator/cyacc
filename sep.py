@@ -40,10 +40,5 @@ if __name__ == "__main__":
 	# make dir if it doesn't exist
 	if not os.path.exists(SRC):
 	    os.makedirs(SRC)
-	# remove any breaking changes
-	check_call(["git", "reset" ,"--hard", "HEAD"], stdout = DEVNULL, stderr = DEVNULL)
 	# separate files into src files
 	separate()
-
-# function : {}
-# Set-Alias -Name mv -Value : -Option AllScope

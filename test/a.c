@@ -43,7 +43,7 @@ int *func(int a[4]) {
 
 struct k
 {
-		short x1;
+	struct ax x1;
 	double x2;
 	short x3;
 	double x4;

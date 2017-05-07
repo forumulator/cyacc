@@ -12,6 +12,7 @@ struct list {
   struct list* next;
 };
 
+int is_incompl_type (struct type t);
 void list_join (struct list **l, struct list **m);
 void list_append_elem (struct list **l, struct list *elem);
 void list_prepend_elem (struct list **l, struct list *elem);

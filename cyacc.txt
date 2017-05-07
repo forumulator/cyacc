@@ -69,10 +69,10 @@ struct struct_type
 }
 
 struct memb_list *
-create_member (char *name, struct memb_list *join) {
+create_member (char *name, struct type t, struct memb_list *join) {
   struct memb_list *this = malloc(sizeof(struct memb_list));
   copy_name(&this->name, name);
-  this->type.ttype = INCOMPL_TYPE;
+  this->type = t;
   this->next = join;
   return this;
 }
@@ -183,6 +183,8 @@ create_alias (char *name, struct type t) {
   return;
 }
 
+/* Get the size of type t, including 
+ * array dimensions etc. */
 int 
 size_of (struct type t) {
   return t.array.size * base_size_of(t);
@@ -191,24 +193,29 @@ size_of (struct type t) {
   // else return -1;
 } 
 
+/* Get the size of target pointed to */
 int size_of_target (struct type t) {
   if (is_array(t))
-    return base_size_of(t);
+    return (t.array.size/t.array.dimen[0] * base_size_of(t));
   if (is_pointer(t))
     return size_of(*(t.val.ptr_to));
   return size_of(t);
 }
 
+/* Size of type without array etc. */
 int
 base_size_of (struct type t) {
   int size;
-  if (t.ttype == BASIC_TYPE) 
+  if (t.ttype == BASIC_TYPE)  {
     size = basic_types[t.val.btype].size;
-  else if (t.ttype == PTR_TYPE)
+  }
+  else if (t.ttype == PTR_TYPE) {
     size = SIZEOFPTR;
-  else if (t.ttype == COMPOUND_TYPE)
+  }
+  else if (t.ttype == COMPOUND_TYPE) {
     // Struct or union
     size = (t.val.stype)->size;
+  }
   return size;
 }
 
@@ -225,11 +232,12 @@ base_size_of (struct type t) {
 #define INDEX_EXPR 2
 #define DEREF_EXPR 1
 
-#define SET_NOT_DEREF(x) (x).deref.type = NOT_DEREF ; (x).deref.idx = NULL
+#define SET_NOT_DEREF(x) (x).deref.type = NOT_DEREF; (x).deref.idx = NULL; (x).deref.mem_oft = -1;
+#define is_mem_ref(x) ((x).deref.type == INDEX_EXPR && (x).deref.mem_oft >= 0)
 #define is_indexed(x) ((x).deref.type == INDEX_EXPR)
 #define is_derefd(x) ((x).deref.type == DEREF_EXPR)
 
-#define is_compound(x) ((x).ttype == COMPOUND_TYPE)
+#define is_compound(x) ((x).ttype == COMPOUND_TYPE && !is_array(x))
 #define is_vector(x) (is_array(x) || is_pointer(x))
 #define is_array(x) ((x).array.n > 0)
 #define is_pointer(x) ((x).ttype == PTR_TYPE)
@@ -382,7 +390,7 @@ void init_tables();
 struct type *get_alias(char *name);
 void create_alias(char *name, struct type type);
 
-struct memb_list *create_member (char *name, struct memb_list *join);
+struct memb_list *create_member (char *name, struct type t, struct memb_list *join);
 
 int size_of_target(struct type t);
 
@@ -654,7 +662,7 @@ int out_jmp(struct expr_type *e, void *label, int type);
 void backpatch(int label, int patch);
 void out_assign(char *name, struct expr_type expr);
 void out_index (struct expr_type e);
-struct expr_type out_member_ref (struct expr_type e, char *mem);
+struct expr_type parse_member_ref (struct expr_type e, char *mem);
 void parse_expr (struct expr_type *result, struct expr_type e1,
           struct expr_type e2, int op);
 void parse_unary_expr (struct expr_type *result, 
@@ -668,8 +676,11 @@ void make_two_quad (struct expr_type e1, int op);
 void out_gen_quad (struct expr_type e);
 
 struct expr_type get_vector_elem (struct expr_type e);
-struct expr_type compound_indexing (struct expr_type e, struct expr_type idx);
+struct expr_type cmpnd_idx (struct expr_type e, struct expr_type idx);
+struct expr_type cmpnd_idx2 (struct expr_type e, struct expr_type idx);
 struct expr_type parse_indexed_expr (struct expr_type e, struct expr_type idx);
+struct expr_type parse_deref_expr (struct expr_type e, struct expr_type idx);
+
 int sout_expr_with_deref (char *buf, struct expr_type e);
 void out_assign_expr (struct expr_type lval, struct expr_type rval);
 void parse_assignment (struct expr_type lval, struct expr_type rval);
@@ -725,17 +736,12 @@ struct list *nested;
 struct scope_type scope;
 
 struct func_rec *active_func;
-// FILE *yyin;
+FILE *yyin;
 
 // Builtin type info.
 void init_globals();
 
 %}
-
-%union {
-  double t;
-  int val;
-}
 
 %union {
   double  val;  /* For returning numbers.                   */  
@@ -780,13 +786,13 @@ void init_globals();
 %type <patch> if_clause
 %type <dual_patch> else_clause 
 %type <loop> while_clause
-%type <e> expr primary_expr opt_init function_call
+%type <e> expr primary_expr opt_init function_call eval_expr
 %type <type> type_name compound_type
 %type <l> var_dlist var_definition actual_params actual_params_list
 %type <sym_npt> symbol_name
 %type <ttype> type_type
 %type <t_name> opt_ctype_name ctype_name;
-%type <tlist> opt_member_decl_list member_decl_list member_decl id_list
+%type <tlist> opt_member_decl_list member_decl_list member_decl memb_list
 %type <e> indexing
 
 // %precedence mult_op
@@ -848,7 +854,7 @@ body_statement    : declaration_statement {}
 label_stmt: IDENTIFIER ':' { fprintf(outfile, "%s:  ", $1); }
           ;
 
-return_statement  : RETURN expr ';' { out_return(&$2); }
+return_statement  : RETURN eval_expr ';' { out_return(&$2); }
                   | RETURN ';' { out_return(NULL); }
                   ;
 
@@ -941,7 +947,6 @@ begin_sub :   /* eps */
                 // Push scope info onto stack
                 list_prepend_elem(&nested, 
                   list_create_elem((void *)label_no));
-                // printf("lvl: %d\n", scope.level);
                 scope.level++;
                 out_label();
               }
@@ -951,8 +956,6 @@ end_sub   :   /* eps */
               {
                 void *data = list_pop_front(&nested);
                 scope.label = (int) data;
-                // printf("lvle: %d\n", scope.level);
-
                 // delsym_scope(scope.level);
                 scope.level--;
               }
@@ -967,18 +970,18 @@ type_definition : aliasing ';'
  * combining the two */
 /* TODO: Check for duplicate members */
 compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
-                    { 
-                      if (get_struct($2))
-                        error("Redefinition of struct");
-                      /* TODO: Differentiate b/w STRUCT and
-                       * UNION */
-                      $$.val.stype = create_struct($2, $4, false);
-                      $$.ttype = COMPOUND_TYPE;
-                      SET_NOT_ARRAY($$);
-                      // If it is not null string
-                      if ($2[0])
-                        free($2);
-                    }
+                  { 
+                    if (get_struct($2))
+                      error("Redefinition of struct");
+                    /* TODO: Differentiate b/w STRUCT and
+                     * UNION */
+                    $$.val.stype = create_struct($2, $4, false);
+                    $$.ttype = COMPOUND_TYPE;
+                    SET_NOT_ARRAY($$);
+                    // If it is not null string
+                    if ($2[0])
+                      free($2);
+                  }
                 | type_type ctype_name
                   {
 
@@ -986,7 +989,7 @@ compound_type   : type_type opt_ctype_name '{' member_decl_list '}'
                     if (!s)  {
                       // Forward declaration
                       $$.val.stype = create_struct($2, NULL, true);
-                      $$.ttype = INCOMPL_TYPE;                      
+                      $$.ttype = COMPOUND_TYPE;                      
                     }
                     else {
                       $$.ttype = COMPOUND_TYPE;
@@ -1029,29 +1032,52 @@ opt_member_decl_list: /* empty */ { $$ = NULL; }
                     | member_decl_list { $$ = $1; }
                     ;
 
-member_decl : type_name id_list ';'
+member_decl : type_name memb_list ';'
               {
-                // Set types for all members
-                struct memb_list *mem = $2;
-                if (size_of($1) == -1)
-                  error("member has incomplete type");
-                while (mem) {
-                  mem->type = $1;
-                  mem = mem->next; 
+                struct memb_list *node = $2;
+                /* TODO: Check for completeness of 
+                  type here */
+                if (is_void_type($1))
+                  error("Structure has Void type member");
+
+                // Backpatch
+                while (node) {
+                  struct type *t = &(node->type);
+
+                  if (t->ttype != PTR_TYPE && 
+                      is_incompl_type($1))
+                    error("Structure Member has incomplete type");
+                  // Travese the list of ptr types
+                  while (t->ttype == PTR_TYPE)
+                    t = t->val.ptr_to;
+                  struct array_type arr = t->array;
+                  *t = $1;
+                  t->array = arr;
+
+                  // TODO: Relloc in the entire ptr_to linked list
+                  // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
+                  node = node->next;
                 }
                 $$ = $2;
               }
             ;
 
-id_list         : IDENTIFIER
-                  {
-                    $$ = create_member($1, NULL);
-                  }
-                | IDENTIFIER ',' id_list
-                  {
-                    $$ = create_member($1, $3); 
-                  }
-                ;
+memb_list : symbol_name ',' memb_list 
+            { 
+              // Check for already defined members
+              // symrec *rec = getsym(active_func, $1.name, scope);
+              // if (rec && rec->scope.level == scope.level) {
+              //   error("Redefinition of symbol");
+              // }
+              $$ = create_member($1.name, $1.type, $3);
+              free($1.name);
+            }
+          | symbol_name
+            {
+              $$ = create_member($1.name, $1.type, NULL);
+              free($1.name);
+            }
+        ;
 
 aliasing  : TYPEDEF type_name IDENTIFIER
             { 
@@ -1145,33 +1171,26 @@ declaration_statement : type_name var_dlist ';'
                           struct symrec *sym;
                           /* TODO: Check for completeness of 
                             type here */
-                          if ($1.ttype == UNDEF_TYPE)
-                            error("incomplete type");
-                          if (is_void_type($1))
-                            error("Void type varible declaration");
 
                           // Backpatch
                           while (node) {
                             sym = (symrec *) node->data;
-                            struct array_type arr = sym->type.array;
-                            if (sym->type.ttype == INCOMPL_TYPE) {
-                              if ($1.ttype == INCOMPL_TYPE)
-                                error("incomplete type for varibale");
-                              sym->type = $1;
-                            }
-                            else if (sym->type.ttype == PTR_TYPE) {
-                              struct type *t = sym->type.val.ptr_to;
-                              // Travese the list of ptr types
-                              while (t->ttype == PTR_TYPE)
-                                t = t->val.ptr_to;
-                              // Set the type of the last node to the basic
-                              // or compound type that is type_name
-                              if (t->ttype == INCOMPL_TYPE) {
-                                *t = $1;
-                              }                              
-                            }
-                            sym->type.array = arr;
-                            print_type(sym->type);
+
+                            if (sym->type.ttype != PTR_TYPE)
+                              if (is_incompl_type($1))
+                                error("Variable has incomplete type");
+                              else if (is_void_type($1))
+                                error("Void type varible declaration");
+
+                            struct type *t = &(sym->type);
+                            // Travese the list of ptr types
+                            while (t->ttype == PTR_TYPE)
+                              t = t->val.ptr_to;
+
+                            struct array_type arr = t->array;
+                            *t = $1;
+                            t->array = arr;
+
                             // TODO: Relloc in the entire ptr_to linked list
                             // sym->type.array.dimen = realloc(sym->type.array.dimen, sym->type.array.n * sizeof(int));
                             node = node->next;
@@ -1179,7 +1198,7 @@ declaration_statement : type_name var_dlist ';'
                         }
                       ;
           
-var_dlist : var_definition ',' var_dlist {list_prepend_elem(&$3, $1); $$ = $3; }
+var_dlist : var_definition ',' var_dlist { list_prepend_elem(&$3, $1); $$ = $3; }
           | var_definition { $$ = $1; }
           ;
 
@@ -1327,13 +1346,13 @@ func_name : IDENTIFIER { copy_name(&$$, $1); }
 
 actual_params_list  : actual_params { $$ = $1; }
                     | /* empty */ { $$ = NULL; }
-actual_params : expr
+actual_params : eval_expr
                 {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = $1;
                   $$ = list_create_elem(e);
                 }
-              | expr ',' actual_params
+              | eval_expr ',' actual_params
                 {
                   struct expr_type *e = malloc(sizeof(struct expr_type));
                   *e = $1;
@@ -1342,11 +1361,31 @@ actual_params : expr
                 }
               ;
 
+/* So that any delayed evaluation can be 
+ * output to a temp variable */
+eval_expr : expr 
+            {
+              if (is_indexed($1) || is_derefd($1))
+                $$ = get_vector_elem($1);
+              else
+                $$ = $1;
+            }
+          ;
+
 // Note that basic types can be inconverted , but compound types can't
 // i.e struct test t; int b = (int)t; is an error
 expr    : primary_expr { $$ = $1; }
-        | expr indexing { $$ = parse_indexed_expr($1, $2); }
-        | expr '.' IDENTIFIER { $$ = out_member_ref($1, $3); }
+        | expr indexing 
+          { 
+            if (is_array($1.type)) {
+              $$ = parse_indexed_expr($1, $2); 
+            }
+            else if (is_pointer($1.type))
+              $$ = parse_deref_expr($1, $2);
+            else
+              error("subscripted value is neither array nor pointer nor vector");
+          }
+        | expr '.' IDENTIFIER { $$ = parse_member_ref($1, $3); }
         | '!' expr  { parse_unary_expr(&$$, $2, '!'); }
         | '~' expr  { parse_unary_expr(&$$, $2, '~'); }
         | '-' expr %prec UMINUS  { parse_unary_expr(&$$, $2, '-'); }
@@ -1380,16 +1419,12 @@ expr    : primary_expr { $$ = $1; }
           }
         | '*' expr %prec DEREF
           {
-            /* Delayed eval */
-            if (is_indexed($2) || is_derefd($2)) {
-              $2 = get_vector_elem($2);
-            }
-            $$ = $2;
-            if (!is_array($2.type) && !is_pointer($2.type))
+            if (is_array($2.type))
+              $$ = parse_indexed_expr($2, create_const_expr2(0));
+            else if (is_pointer($2.type))
+              $$ = parse_deref_expr($2, create_const_expr2(0));
+            else
               error("Attempting to dereference non-pointer");
-            SET_NOT_DEREF($$);
-            $$.deref.type = DEREF_EXPR;
-            /* deref'd whenever used */
           }
         | expr '*' expr  { parse_expr(&$$, $1, $3, '*'); }
         | expr '/' expr  { parse_expr(&$$, $1, $3, '/'); }
@@ -1734,61 +1769,60 @@ make_quad_with_const (struct expr_type e, char *const_str, int op) {
 
 void
 make_quad (struct expr_type e1, struct expr_type e2, int op) {        
-    char *s1 = NULL, *s2 = NULL;
-    assign_name_to_buf(&s1, e1);
-    assign_name_to_buf(&s2, e2);   
-    // printf("%s, %s\n", s1, s2);
-    make_quad_by_name(s1, s2, op);
-
-    free(s1); free(s2);
-
-    return;
+  char *s1 = NULL, *s2 = NULL;
+  assign_name_to_buf(&s1, e1);
+  assign_name_to_buf(&s2, e2);   
+  make_quad_by_name(s1, s2, op);
+  free(s1); free(s2);
+  return;
 }
 
 /* TODO: Change */
 struct expr_type
-out_member_ref (struct expr_type e, char *mem) {
+parse_member_ref (struct expr_type e, char *mem) {
   struct expr_type ret = e;
-  if (is_indexed(e) || is_derefd(e))
-    e = get_vector_elem(e);
-  if (e.type.ttype != COMPOUND_TYPE)
+  if (!is_compound(e.type))
     error("request for member in something not a structure or union");
 
   int oft = struct_calc_offset(e.type.val.stype, mem);
   if (oft == -1)
     error("struct has no member named this");
+  ret.type = struct_get_elem(e.type.val.stype, oft);
 
-  ret.deref.type = INDEX_EXPR;
-  ret.deref.idx = NULL; ret.deref.mem_oft = oft;
-
+  if (is_indexed(e)) {
+    /* Case of a.b.c */
+    if (is_mem_ref(e))
+      ret.deref.mem_oft += oft;
+    /* Case of a[5].e */
+    else {
+      char *const_str = citostr(oft);
+      *(ret.deref.idx) = create_temp_expr(next_quad, 
+                          basic_types[INT_TYPE].t);
+      make_quad_with_const(*(e.deref.idx), const_str, '+');
+    }
+  }
+  else {
+    if (!is_derefd(e)) {
+      /* Get address if not a pointer */
+      int temp = next_quad;
+      out_addr_of(e);
+      ret = create_temp_expr(temp, ret.type);
+    }
+    SET_NOT_DEREF(ret);
+    ret.deref.type = INDEX_EXPR;
+    ret.deref.mem_oft = oft;
+  }
   return ret;
 }
 
+/* Multiplies the offset of a vector by the size of
+ * target. Thus, for out_vector_offset(*t, 2),
+ * we would get _t0 = 2 * sizeof(*t) and so on */
 void
 out_vector_offset (struct expr_type e, struct expr_type idx) {
-  char *const_str; char *mname = NULL; 
-
-  int oft_temp = next_quad;
-  int sz_target;
-  if (is_pointer(e.type)) {
-    sz_target = size_of(*e.type.val.ptr_to);
-  }
-
-  else {
-
-    struct array_type *t = &e.type.array;
-    sz_target = (t->size/t->dimen[0]) * base_size_of(e.type);
-
-  }
-  int d = digits(sz_target);
-  const_str = malloc(d * sizeof(int));
-
-  snprintf(const_str, d, "%d", sz_target);
-  assign_name_to_buf(&mname, idx);
-
-  make_quad_by_name(mname, const_str, '*');
-
-  free(mname);
+  char *const_str = citostr(size_of_target(e.type));
+  make_quad_with_const(idx, const_str, '*');
+  free(const_str);
   return;
 }
 
@@ -1867,38 +1901,35 @@ out_deref_by_index (struct expr_type e) {
   free(base);
 }
 
-/* e contains the details of the dereference */
+void
+out_addr_of (struct expr_type e) {
+  char *name = NULL;
+  assign_name_to_buf(&name, e);
+  fprintf(outfile, "_t%d = &%s\n", next_quad++, name);
+  free(name);
+}
+
+/* e.deref contains the details of the dereference */
 struct expr_type
 get_vector_elem (struct expr_type e) {
   struct expr_type ret;
   SET_NOT_DEREF(ret);
   ret.ptr = QUAD_PTR;
-  ret.val.quad_no = next_quad; 
-  if (is_array(e.type)) {
-    if (is_derefd(e)) {
-      out_const_index(e, 0);
-    }
-    else {
-      out_index(e);
-      ret.val.quad_no++;
-    }
-    ret.type = arr_reduce_dimen(e.type);
-  }
-  else if (is_pointer(e.type)) {
-    /* expr is a pointer type */
-    if (is_derefd(e))
-      out_deref(e);
-    else {
-      ret.val.quad_no += 2;
-      out_deref_by_index(e);
-    }
-    ret.type = *(e.type.val.ptr_to);
+  ret.val.quad_no = next_quad;
+  ret.type = e.type;
+  if (is_derefd(e)) {
+    out_deref(e);
+  } 
+  else if (is_mem_ref(e)) {
+    /* Struct member ref */
+    out_const_index(e, e.deref.mem_oft);
   }
   else {
-    int oft = e.deref.mem_oft;
-    out_const_index(e, oft);
-    ret.type = struct_get_elem(e.type.val.stype, oft);
+    /* Array indexing */
+    out_index(e);
+    ret.val.quad_no++;
   }
+  free(e.deref.idx);
   return ret;
 }
 
@@ -1909,48 +1940,82 @@ void out_label () {
   free(ltext);
 }
 
-
+/* Compound index in case of accesses like
+ * a[2][3], and a.x[2] */
 struct expr_type
-compound_indexing (struct expr_type e, struct expr_type idx) {
+cmpnd_idx (struct expr_type e, struct expr_type idx) {
   struct expr_type ret = e;
-  int incr_size = e.type.array.dimen[1];
-  char const_str[MAX_INT_SIZE];  snprintf(const_str, MAX_INT_SIZE, "%d", incr_size);
   int t = next_quad;
-  make_quad_with_const(*(e.deref.idx), const_str, '*');
-  char temp[20];
-  temp_var_name(t, temp);
+  out_vector_offset(e, idx);
+
+  /* Add the old index to the new idx */
+  char temp[20]; temp_var_name(t, temp);
   int final_quad = next_quad;
-  make_quad_with_const(idx, temp, '+');
+  make_quad_with_const(*(e.deref.idx), temp, '+');
 
-  ret.type = arr_reduce_dimen(ret.type);
-  ret.deref.idx->ptr = QUAD_PTR;
-  ret.deref.idx->val.quad_no = final_quad;
-
+  ret.type = arr_reduce_dimen(e.type);
+  ret.deref.idx = malloc(sizeof(struct expr_type));
+  /* Make new int idx */
+  *(ret.deref.idx) = create_temp_expr(final_quad, basic_types[INT_TYPE].t);
   return ret;
 }
 
+/* Change const offset to idx expr */
+struct expr_type
+cmpnd_idx2 (struct expr_type e, struct expr_type idx) {
+  e.deref.idx = malloc(sizeof(struct expr_type));
+  *(e.deref.idx) = create_const_expr(citostr(e.deref.mem_oft));
+  e.deref.mem_oft = -1;
+  return cmpnd_idx(e, idx);
+}
+
+/* Carry forward the indexing information in e.deref
+ * Only array indexing things are passed here, 
+ * pointer indexes go to parse_deref_expr */
 struct expr_type
 parse_indexed_expr (struct expr_type e, struct expr_type idx) {
   struct expr_type ret;
+  out_assign_expr(create_temp_expr(next_quad, idx.type), idx);
+  fprintf(outfile, "if (_t%d < %d) goto _L%d\n\texit\n", next_quad++, 
+          e.type.array.size, label_no);
+  out_label();
+
   if (is_indexed(e)) {
-    if (is_array(e.type)) {
-      if (e.type.array.n <= 1)
-        error("subscripted value is neither array nor pointer nor vector");
-      return compound_indexing(e, idx);
+    if (is_mem_ref(e)) {
+      return cmpnd_idx2(e, idx);
     }
     else {
-      e = get_vector_elem(e);
+      return cmpnd_idx(e, idx);
     }
   }
+  /* This will be only encountered in case of 
+   * defs like int (*a)[5]; otherwise they'll go to
+   * parse_pointer_deref */
   if (is_derefd(e))
     e = get_vector_elem(e);
-  if (!is_array(e.type) && !is_pointer(e.type))
-    error("subscripted value is neither array nor pointer nor vector");
-  ret = e; ret.deref.type = INDEX_EXPR;
+
+  /* Indexed for a simple array */
+  ret = e;
+  ret.type = arr_reduce_dimen(e.type);
+  ret.deref.type = INDEX_EXPR;
   ret.deref.idx = malloc(sizeof(struct expr_type));
   *(ret.deref.idx) = idx;
-
   return ret;
+}
+
+
+/* For expressions of the type *(p + 5), this outputs
+ * _t0 = p + 5 */
+struct expr_type
+parse_deref_expr (struct expr_type e, struct expr_type idx) {
+  // Create a temp expression of the same type
+  struct expr_type plus = create_temp_expr(next_quad, basic_types[INT_TYPE].t);
+  // Output _t0 = p + 5
+  out_vector_offset(e, idx);
+  struct expr_type ne = create_temp_expr(next_quad, e.type);
+  make_quad(e, plus, '+');
+  ne.deref.type = DEREF_EXPR;
+  return ne;
 }
 
 int 
@@ -1962,17 +2027,16 @@ sout_expr_with_deref (char *buf, struct expr_type e) {
     return sprintf(buf, "*%s ", name);
   }
   else if (is_indexed(e)) {
-    if (is_array(e.type)) {
-      symrec *sym = getsym(active_func, name, scope);
-      out_vector_offset(e, *(e.deref.idx));
-      fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
-          sym->type.array.size * base_size_of(sym->type), label_no);
-      fprintf(outfile, "\t exit 1\n");
-      out_label();
-      return sprintf(buf, "\t %s[_t%d] ", name, t1);
+    if (is_mem_ref(e)) {
+      return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
     }
     else {
-      return sprintf(buf, "\t %s[%d]", name, e.deref.mem_oft);
+      out_vector_offset(e, *(e.deref.idx));
+      // fprintf(outfile, "\t if ( _t%d < %d ) goto _L%d\n", t1, 
+      //     sym->type.array.size * base_size_of(sym->type), label_no);
+      // fprintf(outfile, "\t exit 1\n");
+      out_label();
+      return sprintf(buf, "\t %s[_t%d] ", name, t1);
     }
   }
   else {
@@ -1998,8 +2062,7 @@ out_assign_expr (struct expr_type lval, struct expr_type rval) {
 void
 parse_assignment (struct expr_type lval, struct expr_type rval) {
   struct expr_type result; 
-  struct type lt = get_target_type(lval), rt = get_target_type(rval);
-  // printf("%d: %d, %d: %d\n", lval.type.ttype, lt.val.btype, rt.ttype, rt.val.btype);
+  struct type lt = lval.type, rt = rval.type;
   if (is_void_type(rt))
     error("void value not ignored as it ought to be");
   if (!is_assignable(lval))
@@ -2347,7 +2410,6 @@ create_const_expr (char *const_str) {
   struct expr_type e; e.type.ttype = UNDEF_TYPE;
   if (!const_str)
     return e;
-
   e.type.ttype = BASIC_TYPE;
   e.type.val.btype = const_type(const_str);
   SET_NOT_ARRAY(e.type);
@@ -2360,14 +2422,12 @@ create_const_expr (char *const_str) {
 struct expr_type 
 create_const_expr2 (const int c) {
   struct expr_type e; e.type.ttype = UNDEF_TYPE;
-  int size = digits(c);
+  int size = digits(c) + 1;
   char *const_str = malloc(size * sizeof(char));
   snprintf(const_str, size, "%d", c);
   
-  e.type.ttype = BASIC_TYPE;
-  e.type.val.btype = INT_TYPE;
-  SET_NOT_ARRAY(e.type);
-  
+  e.type = basic_types[INT_TYPE].t;
+
   e.ptr = CONST_PTR;
   e.val.const_str = const_str;
   SET_NOT_DEREF(e);
@@ -2467,7 +2527,6 @@ is_assignable (struct expr_type e) {
    * is a memory address, thus always
    * assignable */
   if (is_indexed(e) || is_derefd(e)) {
-    t = get_target_type(e);
     return is_lval_type(t);
   }
   
@@ -2509,6 +2568,17 @@ is_equiv(struct type t1, struct type t2) {
   }
   else return (t1.val.btype == t2.val.btype);
 
+}
+
+int
+is_incompl_type (struct type t) {
+  if (t.ttype == INCOMPL_TYPE ||
+      t.ttype == UNDEF_TYPE)
+    return 1;
+  if (t.ttype == COMPOUND_TYPE && 
+      t.val.stype->size == -1)
+    return 1;
+  return 0;
 }
 
 
@@ -2674,6 +2744,20 @@ cstrcpy (char *dest, char *src) {
   return nchars + 1;
 }
 
+char *citostr (const int c) {
+  int d = digits(c);
+  char *str = malloc(d * sizeof(char));
+  snprintf(str, d, "%d", c);
+  return str;
+}
+
+// char *cftostr (const float f) {
+//   int d = digits(c);
+//   char *str = malloc(d * sizeof(char));
+//   snprintf(str, d, "%d", c);
+//   return str;
+// }
+
 void print_type(struct type t) {
   struct type *p = &t;
   while (p) {
@@ -2765,6 +2849,7 @@ struct list {
   struct list* next;
 };
 
+int is_incompl_type (struct type t);
 void list_join (struct list **l, struct list **m);
 void list_append_elem (struct list **l, struct list *elem);
 void list_prepend_elem (struct list **l, struct list *elem);
@@ -2806,5 +2891,8 @@ void dump_table (FILE *tfile, struct list *sym_table);
 void dump_struct_table ();
 
 struct type get_target_type (struct expr_type e);
+char *citostr (const int c);
+
+struct expr_type create_temp_expr (int temp, struct type t);
 
 

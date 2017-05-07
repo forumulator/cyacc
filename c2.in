@@ -1,26 +1,6 @@
-float func(int s,int n,float a)
+float func(int s[5], int n,float a)
 {	
  
-	float *bt[5];
-	struct bst *ty;
-	bt[3] = ty;
-	struct bst b;
-	b.t = b.u + 5;
-
-	while(n)
-	{	
-	float j = 0.01;
-		if(a*s+j == 0.53)
-			break;	
-		--n;
-		++j;
-	}	
-
-	if(n==0)
-		{print lval
-		int k;
-		k = k + 1;
-		return 0.21;
-		}	
-	return 0.15;	
+	int *c;
+	*c = 5;
 }

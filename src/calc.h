@@ -165,7 +165,7 @@ void init_tables();
 struct type *get_alias(char *name);
 void create_alias(char *name, struct type type);
 
-struct memb_list *create_member (char *name, struct memb_list *join);
+struct memb_list *create_member (char *name, struct type t, struct memb_list *join);
 
 int size_of_target(struct type t);
 

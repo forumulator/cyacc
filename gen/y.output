@@ -96,10 +96,10 @@ Grammar
    43 opt_member_decl_list: /* empty */
    44                     | member_decl_list
 
-   45 member_decl: type_name id_list ';'
+   45 member_decl: type_name memb_list ';'
 
-   46 id_list: IDENTIFIER
-   47        | IDENTIFIER ',' id_list
+   46 memb_list: symbol_name ',' memb_list
+   47          | symbol_name
 
    48 aliasing: TYPEDEF type_name IDENTIFIER
 
@@ -205,7 +205,7 @@ $end (0) 0
 ')' (41) 21 56 59 68 79 81 96
 '*' (42) 67 97 98
 '+' (43) 101
-',' (44) 28 47 62 86
+',' (44) 28 46 62 86
 '-' (45) 93 102
 '.' (46) 90
 '/' (47) 99
@@ -264,7 +264,7 @@ BREAK (296) 52
 RETURN (297) 18 19
 SIZEOF (298)
 CONSTANT (299) 66 77
-IDENTIFIER (300) 17 24 39 46 47 48 53 65 78 82 90
+IDENTIFIER (300) 17 24 39 48 53 65 78 82 90
 ALIAS_NAME (301) 74
 DEREF (302)
 UMINUS (303)
@@ -326,8 +326,8 @@ opt_member_decl_list (98)
     on left: 43 44, on right: 42
 member_decl (99)
     on left: 45, on right: 42
-id_list (100)
-    on left: 46 47, on right: 45 47
+memb_list (100)
+    on left: 46 47, on right: 45 46
 aliasing (101)
     on left: 48, on right: 33
 expression_statement (102)
@@ -353,7 +353,7 @@ var_dlist (111)
 var_definition (112)
     on left: 64, on right: 62 63
 symbol_name (113)
-    on left: 65 66 67 68, on right: 29 64 66 67 68
+    on left: 65 66 67 68, on right: 29 46 47 64 66 67 68
 type_name (114)
     on left: 69 70 71 72 73 74, on right: 24 29 45 48 61 96
 opt_init (115)
@@ -1547,11 +1547,14 @@ state 90
 
 state 91
 
-   45 member_decl: type_name . id_list ';'
+   45 member_decl: type_name . memb_list ';'
 
-    IDENTIFIER  shift, and go to state 148
+    IDENTIFIER  shift, and go to state 42
+    '*'         shift, and go to state 33
+    '('         shift, and go to state 34
 
-    id_list  go to state 149
+    memb_list    go to state 148
+    symbol_name  go to state 149
 
 
 state 92
@@ -2569,19 +2572,21 @@ state 147
 
 state 148
 
-   46 id_list: IDENTIFIER .
-   47        | IDENTIFIER . ',' id_list
+   45 member_decl: type_name memb_list . ';'
 
-    ','  shift, and go to state 186
-
-    $default  reduce using rule 46 (id_list)
+    ';'  shift, and go to state 186
 
 
 state 149
 
-   45 member_decl: type_name id_list . ';'
+   46 memb_list: symbol_name . ',' memb_list
+   47          | symbol_name .
+   66 symbol_name: symbol_name . '[' CONSTANT ']'
 
-    ';'  shift, and go to state 187
+    ','  shift, and go to state 187
+    '['  shift, and go to state 48
+
+    $default  reduce using rule 47 (memb_list)
 
 
 state 150
@@ -3686,18 +3691,21 @@ state 185
 
 state 186
 
-   47 id_list: IDENTIFIER ',' . id_list
+   45 member_decl: type_name memb_list ';' .
 
-    IDENTIFIER  shift, and go to state 148
-
-    id_list  go to state 195
+    $default  reduce using rule 45 (member_decl)
 
 
 state 187
 
-   45 member_decl: type_name id_list ';' .
+   46 memb_list: symbol_name ',' . memb_list
 
-    $default  reduce using rule 45 (member_decl)
+    IDENTIFIER  shift, and go to state 42
+    '*'         shift, and go to state 33
+    '('         shift, and go to state 34
+
+    memb_list    go to state 195
+    symbol_name  go to state 149
 
 
 state 188
@@ -3792,9 +3800,9 @@ state 194
 
 state 195
 
-   47 id_list: IDENTIFIER ',' id_list .
+   46 memb_list: symbol_name ',' memb_list .
 
-    $default  reduce using rule 47 (id_list)
+    $default  reduce using rule 46 (memb_list)
 
 
 state 196

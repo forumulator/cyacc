@@ -66,10 +66,10 @@ struct struct_type
 }
 
 struct memb_list *
-create_member (char *name, struct memb_list *join) {
+create_member (char *name, struct type t, struct memb_list *join) {
   struct memb_list *this = malloc(sizeof(struct memb_list));
   copy_name(&this->name, name);
-  this->type.ttype = INCOMPL_TYPE;
+  this->type = t;
   this->next = join;
   return this;
 }
@@ -203,12 +203,15 @@ int size_of_target (struct type t) {
 int
 base_size_of (struct type t) {
   int size;
-  if (t.ttype == BASIC_TYPE) 
+  if (t.ttype == BASIC_TYPE)  {
     size = basic_types[t.val.btype].size;
-  else if (t.ttype == PTR_TYPE)
+  }
+  else if (t.ttype == PTR_TYPE) {
     size = SIZEOFPTR;
-  else if (t.ttype == COMPOUND_TYPE)
+  }
+  else if (t.ttype == COMPOUND_TYPE) {
     // Struct or union
     size = (t.val.stype)->size;
+  }
   return size;
 }
