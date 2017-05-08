@@ -31,8 +31,7 @@ def separate():
 
 if __name__ == "__main__":
 	global SRC, INFILE
-	SRC = input("Enter the targer directory")
-	INFILE = input("Enter concatted file name")
+	SRC = INFILE = None
 	if not SRC:
 		SRC = dSRC
 	if not INFILE:
@@ -42,3 +41,6 @@ if __name__ == "__main__":
 	    os.makedirs(SRC)
 	# separate files into src files
 	separate()
+
+# function : {}
+# Set-Alias -Name mv -Value : -Option AllScope
